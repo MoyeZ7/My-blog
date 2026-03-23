@@ -3,7 +3,9 @@ const tokenKey = "my-blog-admin-token";
 const adminState = {
   q: "",
   category: "",
-  editingSlug: null
+  editingSlug: null,
+  commentQuery: "",
+  commentStatus: ""
 };
 
 function getStoredToken() {
@@ -168,6 +170,34 @@ function renderAdminPosts(items, total) {
   );
 }
 
+function renderAdminComments(items, total) {
+  const root = document.querySelector("#comment-admin-list");
+  const template = document.querySelector("#comment-row-template");
+  document.querySelector("#comment-list-summary").textContent = `共 ${total} 条评论`;
+
+  if (!items.length) {
+    const empty = document.createElement("p");
+    empty.className = "muted-text";
+    empty.textContent = "当前筛选条件下没有评论。";
+    root.replaceChildren(empty);
+    return;
+  }
+
+  root.replaceChildren(
+    ...items.map((item) => {
+      const fragment = template.content.cloneNode(true);
+      fragment.querySelector('[data-role="author"]').textContent = item.author;
+      fragment.querySelector('[data-role="status"]').textContent = item.status;
+      fragment.querySelector('[data-role="content"]').textContent = item.content;
+      fragment.querySelector('[data-role="post-title"]').textContent = item.postTitle;
+      fragment.querySelector('[data-role="date"]').textContent = item.createdAt;
+      fragment.querySelector('[data-role="approve"]').dataset.id = String(item.id);
+      fragment.querySelector('[data-role="reject"]').dataset.id = String(item.id);
+      return fragment;
+    })
+  );
+}
+
 function createPostQuery() {
   const params = new URLSearchParams();
 
@@ -177,6 +207,21 @@ function createPostQuery() {
 
   if (adminState.category) {
     params.set("category", adminState.category);
+  }
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
+function createCommentQuery() {
+  const params = new URLSearchParams();
+
+  if (adminState.commentQuery) {
+    params.set("q", adminState.commentQuery);
+  }
+
+  if (adminState.commentStatus) {
+    params.set("status", adminState.commentStatus);
   }
 
   const query = params.toString();
@@ -256,6 +301,22 @@ async function loadAdminPostDetail(slug) {
   });
 }
 
+async function loadAdminComments() {
+  const token = getStoredToken();
+
+  if (!token) {
+    return;
+  }
+
+  const data = await fetchJson(`/api/admin/comments${createCommentQuery()}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  renderAdminComments(data.items, data.total);
+}
+
 function bindLoginForm() {
   document.querySelector("#login-form").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -276,6 +337,7 @@ function bindLoginForm() {
       setMessage("登录成功，正在加载后台数据。");
       await loadDashboard();
       await loadAdminPosts();
+      await loadAdminComments();
     } catch (error) {
       setMessage(error.message, true);
     }
@@ -296,6 +358,15 @@ function bindPostFilters() {
     adminState.q = document.querySelector("#post-search-input").value.trim();
     adminState.category = document.querySelector("#post-category-select").value;
     await loadAdminPosts();
+  });
+}
+
+function bindCommentFilters() {
+  document.querySelector("#comment-filter-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    adminState.commentQuery = document.querySelector("#comment-search-input").value.trim();
+    adminState.commentStatus = document.querySelector("#comment-status-select").value;
+    await loadAdminComments();
   });
 }
 
@@ -407,6 +478,7 @@ function bindCreatePostForm() {
       resetCreatePostForm();
       await loadDashboard();
       await loadAdminPosts();
+      await loadAdminComments();
     } catch (error) {
       setCreatePostMessage(error.message, true);
     }
@@ -420,13 +492,66 @@ function bindEditorControls() {
   });
 }
 
+function bindCommentActions() {
+  document.querySelector("#comment-admin-list").addEventListener("click", async (event) => {
+    const target = event.target;
+
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const action = target.dataset.role;
+
+    if (action !== "approve" && action !== "reject") {
+      return;
+    }
+
+    const id = target.dataset.id;
+
+    if (!id) {
+      return;
+    }
+
+    const token = getStoredToken();
+
+    if (!token) {
+      setCreatePostMessage("请先登录后台。", true);
+      return;
+    }
+
+    const status = action === "approve" ? "approved" : "rejected";
+
+    try {
+      const result = await fetchJson(`/api/admin/comments/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+      });
+
+      setCreatePostMessage(`评论状态已更新为：${result.comment.status}`);
+      await loadDashboard();
+      await loadAdminComments();
+    } catch (error) {
+      setCreatePostMessage(error.message, true);
+    }
+  });
+}
+
 bindLoginForm();
 bindLogout();
 bindPostFilters();
+bindCommentFilters();
 bindPostActions();
 bindCreatePostForm();
 bindEditorControls();
+bindCommentActions();
 
 setEditorMode(false);
 
-loadDashboard().then(loadAdminPosts);
+loadDashboard().then(async () => {
+  await loadAdminPosts();
+  await loadAdminComments();
+});
