@@ -120,6 +120,56 @@
           <article class="panel panel-wide">
             <div class="section-head section-head-split">
               <div>
+                <p class="eyebrow">分类管理</p>
+                <h2>维护栏目结构与迁移</h2>
+              </div>
+              <p id="category-admin-summary" class="muted-text"></p>
+            </div>
+
+            <form id="category-admin-filter-form" class="filter-form">
+              <input
+                id="category-admin-search-input"
+                class="filter-input"
+                type="search"
+                name="q"
+                placeholder="搜索分类名或相关文章标题"
+              />
+              <div></div>
+              <button class="secondary-button" type="submit">筛选</button>
+            </form>
+
+            <div id="category-admin-list" class="category-admin-list"></div>
+
+            <form id="category-rename-form" class="tag-rename-form">
+              <label class="field">
+                <span>当前分类</span>
+                <input
+                  id="category-current-name-input"
+                  name="currentName"
+                  readonly
+                  placeholder="先从列表里选择一个分类"
+                />
+              </label>
+
+              <label class="field">
+                <span>新分类名称</span>
+                <input
+                  id="category-next-name-input"
+                  name="nextName"
+                  placeholder="输入新的分类名称"
+                />
+              </label>
+
+              <div class="create-post-actions">
+                <button class="primary-button" type="submit">保存分类名称</button>
+                <p id="category-message" class="form-message"></p>
+              </div>
+            </form>
+          </article>
+
+          <article class="panel panel-wide">
+            <div class="section-head section-head-split">
+              <div>
                 <p id="editor-mode-label" class="eyebrow">内容创建</p>
                 <h2 id="editor-title">新建文章</h2>
               </div>
@@ -379,6 +429,22 @@
           <p data-role="related-posts" class="muted-text"></p>
         </div>
         <div class="tag-row-actions">
+          <button data-role="rename" class="secondary-button tag-action" type="button">重命名</button>
+          <button data-role="delete" class="secondary-button tag-action is-danger" type="button">删除</button>
+        </div>
+      </article>
+    </template>
+
+    <template id="category-row-template">
+      <article class="category-row">
+        <div class="category-row-main">
+          <div class="category-row-head">
+            <strong data-role="name"></strong>
+            <span data-role="count" class="tag-row-count"></span>
+          </div>
+          <p data-role="related-posts" class="muted-text"></p>
+        </div>
+        <div class="category-row-actions">
           <button data-role="rename" class="secondary-button tag-action" type="button">重命名</button>
           <button data-role="delete" class="secondary-button tag-action is-danger" type="button">删除</button>
         </div>
