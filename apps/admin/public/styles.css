@@ -296,8 +296,18 @@ h2 {
   color: var(--muted);
 }
 
+.post-row-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .post-row-action {
   padding: 0.55rem 0.9rem;
+}
+
+.is-danger {
+  background: rgba(163, 52, 34, 0.12);
+  color: #8e2f22;
 }
 
 .is-hidden {
@@ -320,5 +330,9 @@ h2 {
 
   .post-row-meta {
     justify-content: start;
+  }
+
+  .post-row-actions {
+    flex-wrap: wrap;
   }
 }
