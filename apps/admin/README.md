@@ -15,6 +15,8 @@
 - 后台文章编辑与表单回填
 - 在编辑流程中切换草稿 / 发布状态
 - 后台删除文章
+- 后台评论列表与筛选
+- 评论通过 / 拒绝审核
 
 ## 启动方式
 
@@ -39,6 +41,8 @@ http://localhost:3002
 - `GET /api/admin/posts/:slug`
 - `PUT /api/admin/posts/:slug`
 - `DELETE /api/admin/posts/:slug`
+- `GET /api/admin/comments`
+- `PUT /api/admin/comments/:id`
 
 ## 当前默认账号
 
