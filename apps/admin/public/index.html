@@ -75,6 +75,32 @@
             </div>
             <div id="tag-list" class="tag-list"></div>
           </article>
+
+          <article class="panel panel-wide">
+            <div class="section-head section-head-split">
+              <div>
+                <p class="eyebrow">文章管理</p>
+                <h2>文章列表</h2>
+              </div>
+              <p id="post-list-summary" class="muted-text"></p>
+            </div>
+
+            <form id="post-filter-form" class="filter-form">
+              <input
+                id="post-search-input"
+                class="filter-input"
+                type="search"
+                name="q"
+                placeholder="搜索文章标题或摘要"
+              />
+              <select id="post-category-select" class="filter-select" name="category">
+                <option value="">全部分类</option>
+              </select>
+              <button class="secondary-button" type="submit">筛选</button>
+            </form>
+
+            <div id="post-admin-list" class="post-admin-list"></div>
+          </article>
         </section>
       </section>
     </main>
@@ -83,6 +109,20 @@
       <article class="stat-card">
         <span data-role="label"></span>
         <strong data-role="value"></strong>
+      </article>
+    </template>
+
+    <template id="post-row-template">
+      <article class="post-row">
+        <div class="post-row-main">
+          <strong data-role="title"></strong>
+          <p data-role="excerpt" class="muted-text"></p>
+        </div>
+        <div class="post-row-meta">
+          <span data-role="category"></span>
+          <span data-role="status"></span>
+          <span data-role="date"></span>
+        </div>
       </article>
     </template>
 
