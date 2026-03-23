@@ -6,16 +6,19 @@ import { siteConfig } from "../../../packages/content/src/site-config.js";
 import { getSiteStats, listApprovedCommentsByPostSlug, listPosts } from "../src/blog-service.js";
 import {
   createAdminPost,
+  deleteAdminCategory,
   deleteAdminPost,
   deleteAdminTag,
   getAdminPostBySlug,
   getAdminDashboardSummary,
   getAdminSession,
   getAdminSiteConfig,
+  listAdminCategories,
   listAdminComments,
   listAdminPosts,
   listAdminTags,
   loginAdmin,
+  renameAdminCategory,
   renameAdminTag,
   updateAdminCommentStatus,
   updateAdminPost,
@@ -201,6 +204,49 @@ test("getAdminSiteConfig and updateAdminSiteConfig manage editable site copy", (
   assert.equal(siteConfig.panelTitle, "站点配置已接通");
 
   Object.assign(siteConfig, previousConfig);
+});
+
+test("listAdminCategories can filter categories by keyword", () => {
+  const allCategories = listAdminCategories();
+  const filteredCategories = listAdminCategories({ q: "重构" });
+
+  assert.equal(allCategories.total, 3);
+  assert.equal(filteredCategories.total, 1);
+  assert.equal(filteredCategories.items[0].name, "架构");
+  assert.equal(filteredCategories.items[0].relatedPosts[0], "从零开始重构博客系统的第一原则");
+});
+
+test("renameAdminCategory updates related posts and merges into target category", () => {
+  const originalCategory = posts[2].category;
+  const originalUpdatedAt = posts[2].updatedAt;
+
+  const result = renameAdminCategory("后端", "产品工程");
+
+  assert.equal(result.category?.name, "产品工程");
+  assert.equal(posts[2].category, "产品工程");
+  assert.equal(listPosts({ category: "产品工程" }).length, 1);
+
+  posts[2].category = originalCategory;
+  posts[2].updatedAt = originalUpdatedAt;
+});
+
+test("deleteAdminCategory moves related posts into a replacement category", () => {
+  const originalCategory = posts[0].category;
+  const originalUpdatedAt = posts[0].updatedAt;
+
+  const invalidResult = deleteAdminCategory("架构", "");
+
+  assert.equal(invalidResult.error, "删除分类时需要提供迁移分类");
+
+  const result = deleteAdminCategory("架构", "产品工程");
+
+  assert.equal(result.category?.name, "架构");
+  assert.equal(result.category?.replacementName, "产品工程");
+  assert.equal(posts[0].category, "产品工程");
+  assert.equal(listPosts({ category: "产品工程" }).length, 1);
+
+  posts[0].category = originalCategory;
+  posts[0].updatedAt = originalUpdatedAt;
 });
 
 test("listAdminTags can filter tags by keyword", () => {
