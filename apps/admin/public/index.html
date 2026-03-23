@@ -207,6 +207,78 @@
 
             <div id="comment-admin-list" class="comment-admin-list"></div>
           </article>
+
+          <article class="panel panel-wide">
+            <div class="section-head section-head-split">
+              <div>
+                <p class="eyebrow">站点配置</p>
+                <h2>首页与品牌文案</h2>
+              </div>
+              <p id="site-config-summary" class="muted-text"></p>
+            </div>
+
+            <form id="site-config-form" class="site-config-form">
+              <label class="field">
+                <span>站点名称</span>
+                <input id="site-brand-input" name="brandName" placeholder="例如：我的博客" />
+              </label>
+
+              <label class="field">
+                <span>顶部说明</span>
+                <input id="site-header-note-input" name="headerNote" placeholder="例如：以中文内容为主的全栈博客重建实验。" />
+              </label>
+
+              <label class="field">
+                <span>首页眉题</span>
+                <input id="site-hero-eyebrow-input" name="heroEyebrow" placeholder="例如：从参考模板到新实现" />
+              </label>
+
+              <label class="field">
+                <span>阶段标签</span>
+                <input id="site-panel-eyebrow-input" name="panelEyebrow" placeholder="例如：当前阶段" />
+              </label>
+
+              <label class="field field-wide">
+                <span>首页主标题</span>
+                <input id="site-hero-title-input" name="heroTitle" placeholder="输入首页主标题" />
+              </label>
+
+              <label class="field field-wide">
+                <span>首页说明</span>
+                <textarea id="site-hero-description-input" name="heroDescription" class="field-textarea field-textarea-short" placeholder="输入首页主视觉说明"></textarea>
+              </label>
+
+              <label class="field">
+                <span>阶段标题</span>
+                <input id="site-panel-title-input" name="panelTitle" placeholder="例如：公开阅读端优先" />
+              </label>
+
+              <label class="field field-wide">
+                <span>阶段说明</span>
+                <textarea id="site-panel-description-input" name="panelDescription" class="field-textarea field-textarea-short" placeholder="输入阶段说明"></textarea>
+              </label>
+
+              <label class="field">
+                <span>说明区眉题</span>
+                <input id="site-feature-eyebrow-input" name="featureEyebrow" placeholder="例如：站点说明" />
+              </label>
+
+              <label class="field">
+                <span>说明区标题</span>
+                <input id="site-feature-title-input" name="featureTitle" placeholder="例如：为什么先做前台" />
+              </label>
+
+              <label class="field field-wide">
+                <span>说明区内容</span>
+                <textarea id="site-feature-description-input" name="featureDescription" class="field-textarea field-textarea-short" placeholder="输入首页说明区文案"></textarea>
+              </label>
+
+              <div class="create-post-actions">
+                <button class="primary-button" type="submit">保存站点配置</button>
+                <p id="site-config-message" class="form-message"></p>
+              </div>
+            </form>
+          </article>
         </section>
       </section>
     </main>
