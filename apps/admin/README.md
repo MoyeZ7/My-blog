@@ -19,6 +19,8 @@
 - 评论通过 / 拒绝审核
 - 后台站点配置编辑
 - 首页品牌文案与说明区文案管理
+- 后台标签列表与关键词筛选
+- 标签重命名与安全删除
 
 ## 启动方式
 
@@ -47,6 +49,9 @@ http://localhost:3002
 - `PUT /api/admin/comments/:id`
 - `GET /api/admin/site-config`
 - `PUT /api/admin/site-config`
+- `GET /api/admin/tags`
+- `PUT /api/admin/tags`
+- `DELETE /api/admin/tags`
 
 ## 当前默认账号
 
