@@ -307,7 +307,22 @@ function bindPostActions() {
       return;
     }
 
-    if (target.dataset.role !== "edit") {
+    if (target.dataset.role === "edit") {
+      const slug = target.dataset.slug;
+
+      if (!slug) {
+        return;
+      }
+
+      try {
+        await loadAdminPostDetail(slug);
+      } catch (error) {
+        setCreatePostMessage(error.message, true);
+      }
+      return;
+    }
+
+    if (target.dataset.role !== "delete") {
       return;
     }
 
@@ -318,7 +333,33 @@ function bindPostActions() {
     }
 
     try {
-      await loadAdminPostDetail(slug);
+      const shouldDelete = window.confirm("确认删除这篇文章吗？该操作不可恢复。");
+
+      if (!shouldDelete) {
+        return;
+      }
+
+      const token = getStoredToken();
+
+      if (!token) {
+        setCreatePostMessage("请先登录后台。", true);
+        return;
+      }
+
+      const result = await fetchJson(`/api/admin/posts/${encodeURIComponent(slug)}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (adminState.editingSlug === slug) {
+        resetCreatePostForm();
+      }
+
+      setCreatePostMessage(`已删除文章：${result.post.title}`);
+      await loadDashboard();
+      await loadAdminPosts();
     } catch (error) {
       setCreatePostMessage(error.message, true);
     }

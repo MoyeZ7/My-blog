@@ -14,6 +14,7 @@
 - 文章创建后自动刷新后台概览与列表
 - 后台文章编辑与表单回填
 - 在编辑流程中切换草稿 / 发布状态
+- 后台删除文章
 
 ## 启动方式
 
@@ -37,6 +38,7 @@ http://localhost:3002
 - `POST /api/admin/posts`
 - `GET /api/admin/posts/:slug`
 - `PUT /api/admin/posts/:slug`
+- `DELETE /api/admin/posts/:slug`
 
 ## 当前默认账号
 
