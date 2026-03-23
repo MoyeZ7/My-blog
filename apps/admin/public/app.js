@@ -34,6 +34,12 @@ function setMessage(message, isError = false) {
   node.classList.toggle("is-error", isError);
 }
 
+function setCreatePostMessage(message, isError = false) {
+  const node = document.querySelector("#create-post-message");
+  node.textContent = message;
+  node.classList.toggle("is-error", isError);
+}
+
 function showDashboard() {
   document.querySelector("#login-view").classList.add("is-hidden");
   document.querySelector("#dashboard-view").classList.remove("is-hidden");
@@ -116,6 +122,11 @@ function renderPostCategoryOptions(items) {
   ];
 
   root.innerHTML = options.join("");
+}
+
+function resetCreatePostForm() {
+  document.querySelector("#create-post-form").reset();
+  document.querySelector("#create-status-select").value = "published";
 }
 
 function renderAdminPosts(items, total) {
@@ -246,8 +257,50 @@ function bindPostFilters() {
   });
 }
 
+function bindCreatePostForm() {
+  document.querySelector("#create-post-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const token = getStoredToken();
+
+    if (!token) {
+      setCreatePostMessage("请先登录后台。", true);
+      return;
+    }
+
+    const payload = {
+      title: document.querySelector("#create-title-input").value.trim(),
+      category: document.querySelector("#create-category-input").value.trim(),
+      status: document.querySelector("#create-status-select").value,
+      excerpt: document.querySelector("#create-excerpt-input").value.trim(),
+      tags: document.querySelector("#create-tags-input").value.trim(),
+      coverImage: document.querySelector("#create-cover-input").value.trim(),
+      content: document.querySelector("#create-content-input").value.trim()
+    };
+
+    try {
+      const result = await fetchJson("/api/admin/posts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      setCreatePostMessage(`已创建文章：${result.post.title}`);
+      resetCreatePostForm();
+      await loadDashboard();
+      await loadAdminPosts();
+    } catch (error) {
+      setCreatePostMessage(error.message, true);
+    }
+  });
+}
+
 bindLoginForm();
 bindLogout();
 bindPostFilters();
+bindCreatePostForm();
 
 loadDashboard().then(loadAdminPosts);

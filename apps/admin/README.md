@@ -10,6 +10,8 @@
 - 文章、分类、标签和站点统计概览
 - 后台文章列表
 - 文章关键词与分类筛选
+- 后台新建文章表单
+- 文章创建后自动刷新后台概览与列表
 
 ## 启动方式
 
@@ -30,6 +32,7 @@ http://localhost:3002
 - `POST /api/admin/login`
 - `GET /api/admin/summary`
 - `GET /api/admin/posts`
+- `POST /api/admin/posts`
 
 ## 当前默认账号
 
