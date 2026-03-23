@@ -41,3 +41,16 @@ export function getAdminDashboardSummary() {
     tags: listTags().slice(0, 8)
   };
 }
+
+export function listAdminPosts(filters = {}) {
+  const items = listPosts(filters).map((post) => ({
+    ...post,
+    status: "已发布",
+    updatedAt: post.publishedAt
+  }));
+
+  return {
+    items,
+    total: items.length
+  };
+}

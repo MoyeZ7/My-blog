@@ -1,5 +1,10 @@
 import http from "node:http";
-import { getAdminDashboardSummary, getAdminSession, loginAdmin } from "./admin-service.js";
+import {
+  getAdminDashboardSummary,
+  getAdminSession,
+  listAdminPosts,
+  loginAdmin
+} from "./admin-service.js";
 import { getPostBySlug, getSiteStats, listCategories, listPosts, listTags } from "./blog-service.js";
 import { sendJson, sendNotFound } from "./response.js";
 
@@ -38,6 +43,19 @@ function getBearerToken(request) {
   }
 
   return authorization.slice("Bearer ".length).trim();
+}
+
+function getAuthorizedAdminSession(request, response) {
+  const session = getAdminSession(getBearerToken(request));
+
+  if (!session) {
+    sendJson(response, 401, {
+      message: "Missing admin authorization"
+    });
+    return null;
+  }
+
+  return session;
 }
 
 function handleGetRequest(pathname, searchParams, response) {
@@ -140,12 +158,9 @@ const server = http.createServer(async (request, response) => {
   }
 
   if (request.method === "GET" && url.pathname === "/api/admin/summary") {
-    const session = getAdminSession(getBearerToken(request));
+    const session = getAuthorizedAdminSession(request, response);
 
     if (!session) {
-      sendJson(response, 401, {
-        message: "Missing admin authorization"
-      });
       return;
     }
 
@@ -156,6 +171,26 @@ const server = http.createServer(async (request, response) => {
         createdAt: session.createdAt
       },
       summary: getAdminDashboardSummary()
+    });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/admin/posts") {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    sendJson(response, 200, {
+      session: {
+        username: session.username,
+        displayName: session.displayName
+      },
+      ...listAdminPosts({
+        q: url.searchParams.get("q"),
+        category: url.searchParams.get("category")
+      })
     });
     return;
   }
