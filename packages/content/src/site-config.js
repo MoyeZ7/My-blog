@@ -1,0 +1,17 @@
+export const siteConfig = {
+  brandName: "我的博客",
+  headerNote: "以中文内容为主的全栈博客重建实验。",
+  heroEyebrow: "从参考模板到新实现",
+  heroTitle: "把博客做成真正适合中文阅读的内容产品。",
+  heroDescription:
+    "这一版不再只是“能显示文章”，而是开始强调阅读节奏、中文文案、检索能力和更清晰的信息组织。",
+  panelEyebrow: "当前阶段",
+  panelTitle: "公开阅读端优先",
+  panelDescription:
+    "首页、详情页、分类和标签浏览已经可用。下一阶段会进入后台壳子与内容管理流程。",
+  featureEyebrow: "站点说明",
+  featureTitle: "为什么先做前台",
+  featureDescription:
+    "因为先把内容模型和阅读体验跑通，后台的新增、编辑和审核流程才不会建立在摇摆不定的概念之上。",
+  updatedAt: "2026-03-23"
+};

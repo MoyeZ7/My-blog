@@ -2,6 +2,7 @@ import http from "node:http";
 import {
   createAdminPost,
   deleteAdminPost,
+  getAdminSiteConfig,
   listAdminComments,
   getAdminPostBySlug,
   getAdminDashboardSummary,
@@ -9,10 +10,12 @@ import {
   listAdminPosts,
   loginAdmin,
   updateAdminCommentStatus,
-  updateAdminPost
+  updateAdminPost,
+  updateAdminSiteConfig
 } from "./admin-service.js";
 import {
   createPublicComment,
+  getPublicSiteConfig,
   getPostBySlug,
   getSiteStats,
   listApprovedCommentsByPostSlug,
@@ -108,6 +111,11 @@ function handleGetRequest(pathname, searchParams, response) {
 
   if (pathname === "/api/stats") {
     sendJson(response, 200, getSiteStats());
+    return;
+  }
+
+  if (pathname === "/api/site-config") {
+    sendJson(response, 200, getPublicSiteConfig());
     return;
   }
 
@@ -301,6 +309,23 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && url.pathname === "/api/admin/site-config") {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    sendJson(response, 200, {
+      session: {
+        username: session.username,
+        displayName: session.displayName
+      },
+      ...getAdminSiteConfig()
+    });
+    return;
+  }
+
   const adminPostMatch = url.pathname.match(/^\/api\/admin\/posts\/([a-z0-9-]+)$/);
   const adminCommentMatch = url.pathname.match(/^\/api\/admin\/comments\/(\d+)$/);
 
@@ -420,6 +445,43 @@ const server = http.createServer(async (request, response) => {
     }
 
     const result = updateAdminCommentStatus(adminCommentMatch[1], payload.status);
+
+    if (result.error) {
+      sendJson(response, 400, {
+        message: result.error
+      });
+      return;
+    }
+
+    sendJson(response, 200, {
+      session: {
+        username: session.username,
+        displayName: session.displayName
+      },
+      ...result
+    });
+    return;
+  }
+
+  if (request.method === "PUT" && url.pathname === "/api/admin/site-config") {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    let payload;
+
+    try {
+      payload = await readJsonBody(request);
+    } catch (error) {
+      sendJson(response, 400, {
+        message: "Invalid JSON body"
+      });
+      return;
+    }
+
+    const result = updateAdminSiteConfig(payload);
 
     if (result.error) {
       sendJson(response, 400, {

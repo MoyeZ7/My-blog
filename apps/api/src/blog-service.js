@@ -1,5 +1,6 @@
 import { posts } from "../../../packages/content/src/posts.js";
 import { comments } from "../../../packages/content/src/comments.js";
+import { siteConfig } from "../../../packages/content/src/site-config.js";
 
 function normalize(value) {
   return value?.trim().toLowerCase() ?? "";
@@ -44,6 +45,23 @@ function formatPublicComment(comment) {
     author: comment.author,
     content: comment.content,
     createdAt: comment.createdAt
+  };
+}
+
+function formatPublicSiteConfig() {
+  return {
+    brandName: siteConfig.brandName,
+    headerNote: siteConfig.headerNote,
+    heroEyebrow: siteConfig.heroEyebrow,
+    heroTitle: siteConfig.heroTitle,
+    heroDescription: siteConfig.heroDescription,
+    panelEyebrow: siteConfig.panelEyebrow,
+    panelTitle: siteConfig.panelTitle,
+    panelDescription: siteConfig.panelDescription,
+    featureEyebrow: siteConfig.featureEyebrow,
+    featureTitle: siteConfig.featureTitle,
+    featureDescription: siteConfig.featureDescription,
+    updatedAt: siteConfig.updatedAt
   };
 }
 
@@ -180,4 +198,8 @@ export function createPublicComment(slug, input) {
       status: "待审核"
     }
   };
+}
+
+export function getPublicSiteConfig() {
+  return formatPublicSiteConfig();
 }

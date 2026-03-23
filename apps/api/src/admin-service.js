@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { comments } from "../../../packages/content/src/comments.js";
 import { posts } from "../../../packages/content/src/posts.js";
+import { siteConfig } from "../../../packages/content/src/site-config.js";
 import { listPosts } from "./blog-service.js";
 
 const sessions = new Map();
@@ -18,6 +19,23 @@ function normalize(value) {
 
 function normalizeStatus(status) {
   return status === "draft" ? "draft" : "published";
+}
+
+function formatAdminSiteConfig() {
+  return {
+    brandName: siteConfig.brandName,
+    headerNote: siteConfig.headerNote,
+    heroEyebrow: siteConfig.heroEyebrow,
+    heroTitle: siteConfig.heroTitle,
+    heroDescription: siteConfig.heroDescription,
+    panelEyebrow: siteConfig.panelEyebrow,
+    panelTitle: siteConfig.panelTitle,
+    panelDescription: siteConfig.panelDescription,
+    featureEyebrow: siteConfig.featureEyebrow,
+    featureTitle: siteConfig.featureTitle,
+    featureDescription: siteConfig.featureDescription,
+    updatedAt: siteConfig.updatedAt
+  };
 }
 
 function getReadingTime(content) {
@@ -177,6 +195,12 @@ export function getAdminDashboardSummary() {
       total: comments.length,
       pending: comments.filter((comment) => comment.status === "pending").length
     }
+  };
+}
+
+export function getAdminSiteConfig() {
+  return {
+    config: formatAdminSiteConfig()
   };
 }
 
@@ -431,6 +455,47 @@ export function updateAdminCommentStatus(id, status) {
 
   return {
     comment: formatAdminComment(comment)
+  };
+}
+
+export function updateAdminSiteConfig(input) {
+  const brandName = normalize(input.brandName);
+  const heroTitle = normalize(input.heroTitle);
+  const heroDescription = normalize(input.heroDescription);
+
+  if (!brandName) {
+    return {
+      error: "站点名称不能为空"
+    };
+  }
+
+  if (!heroTitle) {
+    return {
+      error: "首页主标题不能为空"
+    };
+  }
+
+  if (!heroDescription) {
+    return {
+      error: "首页说明不能为空"
+    };
+  }
+
+  siteConfig.brandName = brandName;
+  siteConfig.headerNote = normalize(input.headerNote);
+  siteConfig.heroEyebrow = normalize(input.heroEyebrow);
+  siteConfig.heroTitle = heroTitle;
+  siteConfig.heroDescription = heroDescription;
+  siteConfig.panelEyebrow = normalize(input.panelEyebrow);
+  siteConfig.panelTitle = normalize(input.panelTitle);
+  siteConfig.panelDescription = normalize(input.panelDescription);
+  siteConfig.featureEyebrow = normalize(input.featureEyebrow);
+  siteConfig.featureTitle = normalize(input.featureTitle);
+  siteConfig.featureDescription = normalize(input.featureDescription);
+  siteConfig.updatedAt = new Date().toISOString().slice(0, 10);
+
+  return {
+    config: formatAdminSiteConfig()
   };
 }
 
