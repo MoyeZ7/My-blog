@@ -3,6 +3,7 @@ const tokenKey = "my-blog-admin-token";
 const adminState = {
   q: "",
   category: "",
+  categoryAdminQuery: "",
   editingSlug: null,
   commentQuery: "",
   commentStatus: "",
@@ -52,6 +53,12 @@ function setSiteConfigMessage(message, isError = false) {
 
 function setTagMessage(message, isError = false) {
   const node = document.querySelector("#tag-message");
+  node.textContent = message;
+  node.classList.toggle("is-error", isError);
+}
+
+function setCategoryMessage(message, isError = false) {
+  const node = document.querySelector("#category-message");
   node.textContent = message;
   node.classList.toggle("is-error", isError);
 }
@@ -237,6 +244,32 @@ function renderAdminTags(items, total) {
   );
 }
 
+function renderAdminCategoriesList(items, total) {
+  const root = document.querySelector("#category-admin-list");
+  const template = document.querySelector("#category-row-template");
+  document.querySelector("#category-admin-summary").textContent = `共 ${total} 个分类`;
+
+  if (!items.length) {
+    const empty = document.createElement("p");
+    empty.className = "muted-text";
+    empty.textContent = "当前筛选条件下没有分类。";
+    root.replaceChildren(empty);
+    return;
+  }
+
+  root.replaceChildren(
+    ...items.map((item) => {
+      const fragment = template.content.cloneNode(true);
+      fragment.querySelector('[data-role="name"]').textContent = item.name;
+      fragment.querySelector('[data-role="count"]').textContent = `${item.postCount} 篇文章`;
+      fragment.querySelector('[data-role="related-posts"]').textContent = item.relatedPosts.join(" / ");
+      fragment.querySelector('[data-role="rename"]').dataset.name = item.name;
+      fragment.querySelector('[data-role="delete"]').dataset.name = item.name;
+      return fragment;
+    })
+  );
+}
+
 function createPostQuery() {
   const params = new URLSearchParams();
 
@@ -272,6 +305,17 @@ function createTagQuery() {
 
   if (adminState.tagQuery) {
     params.set("q", adminState.tagQuery);
+  }
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
+function createCategoryAdminQuery() {
+  const params = new URLSearchParams();
+
+  if (adminState.categoryAdminQuery) {
+    params.set("q", adminState.categoryAdminQuery);
   }
 
   const query = params.toString();
@@ -410,6 +454,22 @@ async function loadAdminTags() {
   renderAdminTags(data.items, data.total);
 }
 
+async function loadAdminCategoriesList() {
+  const token = getStoredToken();
+
+  if (!token) {
+    return;
+  }
+
+  const data = await fetchJson(`/api/admin/categories${createCategoryAdminQuery()}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  renderAdminCategoriesList(data.items, data.total);
+}
+
 function bindLoginForm() {
   document.querySelector("#login-form").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -433,6 +493,7 @@ function bindLoginForm() {
       await loadAdminComments();
       await loadAdminSiteConfig();
       await loadAdminTags();
+      await loadAdminCategoriesList();
     } catch (error) {
       setMessage(error.message, true);
     }
@@ -470,6 +531,14 @@ function bindTagFilters() {
     event.preventDefault();
     adminState.tagQuery = document.querySelector("#tag-search-input").value.trim();
     await loadAdminTags();
+  });
+}
+
+function bindCategoryAdminFilters() {
+  document.querySelector("#category-admin-filter-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    adminState.categoryAdminQuery = document.querySelector("#category-admin-search-input").value.trim();
+    await loadAdminCategoriesList();
   });
 }
 
@@ -535,6 +604,7 @@ function bindPostActions() {
       await loadDashboard();
       await loadAdminPosts();
       await loadAdminTags();
+      await loadAdminCategoriesList();
     } catch (error) {
       setCreatePostMessage(error.message, true);
     }
@@ -584,6 +654,7 @@ function bindCreatePostForm() {
       await loadAdminPosts();
       await loadAdminComments();
       await loadAdminTags();
+      await loadAdminCategoriesList();
     } catch (error) {
       setCreatePostMessage(error.message, true);
     }
@@ -789,11 +860,127 @@ function bindTagActions() {
   });
 }
 
+function bindCategoryRenameForm() {
+  document.querySelector("#category-rename-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const token = getStoredToken();
+
+    if (!token) {
+      setCategoryMessage("请先登录后台。", true);
+      return;
+    }
+
+    const currentName = document.querySelector("#category-current-name-input").value.trim();
+    const nextName = document.querySelector("#category-next-name-input").value.trim();
+
+    try {
+      const result = await fetchJson("/api/admin/categories", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ currentName, nextName })
+      });
+
+      if (adminState.category === currentName) {
+        adminState.category = result.category.name;
+      }
+
+      document.querySelector("#category-current-name-input").value = result.category.name;
+      document.querySelector("#category-next-name-input").value = "";
+      setCategoryMessage(`分类已更新为：${result.category.name}`);
+      await loadDashboard();
+      await loadAdminPosts();
+      await loadAdminCategoriesList();
+    } catch (error) {
+      setCategoryMessage(error.message, true);
+    }
+  });
+}
+
+function bindCategoryActions() {
+  document.querySelector("#category-admin-list").addEventListener("click", async (event) => {
+    const target = event.target;
+
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const action = target.dataset.role;
+    const name = target.dataset.name;
+
+    if (!name) {
+      return;
+    }
+
+    if (action === "rename") {
+      document.querySelector("#category-current-name-input").value = name;
+      document.querySelector("#category-next-name-input").value = name;
+      setCategoryMessage(`正在准备重命名分类：${name}`);
+      document.querySelector("#category-next-name-input").focus();
+      document.querySelector("#category-next-name-input").select();
+      return;
+    }
+
+    if (action !== "delete") {
+      return;
+    }
+
+    const token = getStoredToken();
+
+    if (!token) {
+      setCategoryMessage("请先登录后台。", true);
+      return;
+    }
+
+    const replacementName = window.prompt(
+      `删除分类“${name}”前，需要输入迁移目标分类。相关文章会被移动到这个分类。`,
+      ""
+    );
+
+    if (replacementName === null) {
+      return;
+    }
+
+    try {
+      const result = await fetchJson("/api/admin/categories", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ name, replacementName: replacementName.trim() })
+      });
+
+      if (adminState.category === name) {
+        adminState.category = result.category.replacementName;
+      }
+
+      if (document.querySelector("#category-current-name-input").value.trim() === name) {
+        document.querySelector("#category-current-name-input").value = "";
+        document.querySelector("#category-next-name-input").value = "";
+      }
+
+      setCategoryMessage(
+        `分类已删除：${result.category.name}，并迁移到 ${result.category.replacementName}`
+      );
+      await loadDashboard();
+      await loadAdminPosts();
+      await loadAdminCategoriesList();
+    } catch (error) {
+      setCategoryMessage(error.message, true);
+    }
+  });
+}
+
 bindLoginForm();
 bindLogout();
 bindPostFilters();
 bindCommentFilters();
 bindTagFilters();
+bindCategoryAdminFilters();
 bindPostActions();
 bindCreatePostForm();
 bindEditorControls();
@@ -801,6 +988,8 @@ bindCommentActions();
 bindSiteConfigForm();
 bindTagRenameForm();
 bindTagActions();
+bindCategoryRenameForm();
+bindCategoryActions();
 
 setEditorMode(false);
 
@@ -809,4 +998,5 @@ loadDashboard().then(async () => {
   await loadAdminComments();
   await loadAdminSiteConfig();
   await loadAdminTags();
+  await loadAdminCategoriesList();
 });
