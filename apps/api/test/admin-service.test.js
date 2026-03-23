@@ -4,6 +4,7 @@ import { posts } from "../../../packages/content/src/posts.js";
 import { getSiteStats, listPosts } from "../src/blog-service.js";
 import {
   createAdminPost,
+  deleteAdminPost,
   getAdminPostBySlug,
   getAdminDashboardSummary,
   getAdminSession,
@@ -113,4 +114,26 @@ test("getAdminPostBySlug returns editable post detail and updateAdminPost can ch
   assert.equal(listPosts({ category: "编辑" }).length, 1);
 
   posts.splice(0, 1);
+});
+
+test("deleteAdminPost removes the target post from admin and public lists", () => {
+  const createResult = createAdminPost({
+    title: "后台删除流程测试文章",
+    excerpt: "用于验证后台删除流程。",
+    category: "删除",
+    tags: "删除, 后台",
+    content: "准备删除的正文",
+    status: "published"
+  });
+
+  assert.ok(createResult.post);
+  assert.equal(listAdminPosts({ category: "删除" }).total, 1);
+  assert.equal(listPosts({ category: "删除" }).length, 1);
+
+  const deleteResult = deleteAdminPost(createResult.post.slug);
+
+  assert.ok(deleteResult.post);
+  assert.equal(deleteResult.post?.title, "后台删除流程测试文章");
+  assert.equal(listAdminPosts({ category: "删除" }).total, 0);
+  assert.equal(listPosts({ category: "删除" }).length, 0);
 });
