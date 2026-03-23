@@ -1,15 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { comments } from "../../../packages/content/src/comments.js";
 import { posts } from "../../../packages/content/src/posts.js";
-import { getSiteStats, listPosts } from "../src/blog-service.js";
+import { getSiteStats, listApprovedCommentsByPostSlug, listPosts } from "../src/blog-service.js";
 import {
   createAdminPost,
   deleteAdminPost,
   getAdminPostBySlug,
   getAdminDashboardSummary,
   getAdminSession,
+  listAdminComments,
   listAdminPosts,
   loginAdmin,
+  updateAdminCommentStatus,
   updateAdminPost
 } from "../src/admin-service.js";
 
@@ -136,4 +139,26 @@ test("deleteAdminPost removes the target post from admin and public lists", () =
   assert.equal(deleteResult.post?.title, "后台删除流程测试文章");
   assert.equal(listAdminPosts({ category: "删除" }).total, 0);
   assert.equal(listPosts({ category: "删除" }).length, 0);
+});
+
+test("listApprovedCommentsByPostSlug only returns approved public comments", () => {
+  const items = listApprovedCommentsByPostSlug("building-better-reading-rhythm");
+
+  assert.equal(items.length, 1);
+  assert.equal(items[0].author, "周宁");
+});
+
+test("listAdminComments and updateAdminCommentStatus manage moderation state", () => {
+  const pendingBefore = listAdminComments({ status: "pending" });
+
+  assert.equal(pendingBefore.total, 1);
+  assert.equal(pendingBefore.items[0].author, "陈序");
+
+  const result = updateAdminCommentStatus(3, "approved");
+
+  assert.ok(result.comment);
+  assert.equal(result.comment?.status, "已通过");
+  assert.equal(listApprovedCommentsByPostSlug("designing-a-blog-from-first-principles").length, 1);
+
+  comments.find((item) => item.id === 3).status = "pending";
 });
