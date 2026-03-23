@@ -236,6 +236,13 @@ input {
   margin-bottom: 1.2rem;
 }
 
+.section-head-split {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 1rem;
+}
+
 .post-list,
 .category-list,
 .related-posts {
@@ -377,6 +384,105 @@ input {
   font-size: 1.08rem;
 }
 
+.detail-comments {
+  margin-top: 2.25rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.comment-summary,
+.comment-message,
+.comment-empty,
+.comment-card-content {
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.comment-list {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.comment-card {
+  padding: 1.1rem 1.2rem;
+  border-radius: 1.3rem;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.comment-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.55rem;
+}
+
+.comment-card-date {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.comment-card-content,
+.comment-empty {
+  margin: 0;
+}
+
+.comment-form {
+  display: grid;
+  gap: 1rem;
+  padding: 1.3rem;
+  border-radius: 1.5rem;
+  background: rgba(247, 231, 212, 0.55);
+  border: 1px solid var(--border);
+}
+
+.comment-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.comment-field span {
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.comment-input,
+.comment-textarea {
+  width: 100%;
+  border-radius: 1.1rem;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.78);
+  padding: 0.9rem 1rem;
+  color: var(--text);
+}
+
+.comment-input:focus,
+.comment-textarea:focus {
+  outline: 2px solid rgba(180, 75, 45, 0.18);
+  outline-offset: 1px;
+}
+
+.comment-textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+.comment-form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.comment-message {
+  margin: 0;
+}
+
+.comment-message.is-error {
+  color: var(--accent);
+}
+
 .inline-tag {
   padding: 0.48rem 0.8rem;
   border-radius: 999px;
@@ -415,5 +521,11 @@ input {
   .hero-copy h1,
   .detail-card h1 {
     max-width: none;
+  }
+
+  .section-head-split,
+  .comment-form-actions,
+  .comment-card-head {
+    display: grid;
   }
 }

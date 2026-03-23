@@ -27,6 +27,45 @@
         </div>
         <img id="post-cover" class="detail-cover" alt="" />
         <div id="post-content" class="detail-content"></div>
+
+        <section class="detail-comments">
+          <div class="section-head section-head-split">
+            <div>
+              <p class="eyebrow">读者评论</p>
+              <h2>继续这篇文章的讨论</h2>
+            </div>
+            <p id="comment-summary" class="comment-summary">正在加载评论...</p>
+          </div>
+
+          <div id="comment-list" class="comment-list"></div>
+
+          <form id="comment-form" class="comment-form">
+            <label class="comment-field">
+              <span>你的称呼</span>
+              <input
+                id="comment-author-input"
+                name="author"
+                class="comment-input"
+                placeholder="例如：一位读者"
+              />
+            </label>
+
+            <label class="comment-field">
+              <span>你的评论</span>
+              <textarea
+                id="comment-content-input"
+                name="content"
+                class="comment-textarea"
+                placeholder="留下你的看法，提交后会先进入审核。"
+              ></textarea>
+            </label>
+
+            <div class="comment-form-actions">
+              <p id="comment-message" class="comment-message">评论提交后会进入审核流程。</p>
+              <button id="comment-submit-button" class="secondary-button" type="submit">提交评论</button>
+            </div>
+          </form>
+        </section>
       </article>
 
       <aside class="detail-sidebar">
@@ -36,6 +75,16 @@
         </div>
       </aside>
     </main>
+
+    <template id="comment-card-template">
+      <article class="comment-card">
+        <div class="comment-card-head">
+          <strong data-role="author"></strong>
+          <span data-role="date" class="comment-card-date"></span>
+        </div>
+        <p data-role="content" class="comment-card-content"></p>
+      </article>
+    </template>
 
     <script type="module" src="/post.js"></script>
   </body>
