@@ -310,6 +310,56 @@ h2 {
   color: #8e2f22;
 }
 
+.comment-admin-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.comment-row {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: var(--panel);
+}
+
+.comment-row-main {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.comment-row-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.comment-status {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(185, 85, 52, 0.12);
+  color: var(--text);
+}
+
+.comment-row-meta {
+  display: grid;
+  justify-items: end;
+  align-content: start;
+  gap: 0.6rem;
+  color: var(--muted);
+}
+
+.comment-row-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.comment-action {
+  padding: 0.55rem 0.85rem;
+}
+
 .is-hidden {
   display: none;
 }
@@ -322,17 +372,21 @@ h2 {
   .create-post-form,
   .filter-form,
   .post-row,
+  .comment-row,
   .section-head-split,
   .editor-head-actions {
     grid-template-columns: 1fr;
     display: grid;
   }
 
-  .post-row-meta {
+  .post-row-meta,
+  .comment-row-meta {
     justify-content: start;
+    justify-items: start;
   }
 
-  .post-row-actions {
+  .post-row-actions,
+  .comment-row-actions {
     flex-wrap: wrap;
   }
 }

@@ -178,6 +178,35 @@
 
             <div id="post-admin-list" class="post-admin-list"></div>
           </article>
+
+          <article class="panel panel-wide">
+            <div class="section-head section-head-split">
+              <div>
+                <p class="eyebrow">评论管理</p>
+                <h2>评论审核</h2>
+              </div>
+              <p id="comment-list-summary" class="muted-text"></p>
+            </div>
+
+            <form id="comment-filter-form" class="filter-form">
+              <input
+                id="comment-search-input"
+                class="filter-input"
+                type="search"
+                name="q"
+                placeholder="搜索评论作者、内容或文章标题"
+              />
+              <select id="comment-status-select" class="filter-select" name="status">
+                <option value="">全部状态</option>
+                <option value="pending">待审核</option>
+                <option value="approved">已通过</option>
+                <option value="rejected">已拒绝</option>
+              </select>
+              <button class="secondary-button" type="submit">筛选</button>
+            </form>
+
+            <div id="comment-admin-list" class="comment-admin-list"></div>
+          </article>
         </section>
       </section>
     </main>
@@ -202,6 +231,26 @@
           <div class="post-row-actions">
             <button data-role="edit" class="secondary-button post-row-action" type="button">编辑</button>
             <button data-role="delete" class="secondary-button post-row-action is-danger" type="button">删除</button>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <template id="comment-row-template">
+      <article class="comment-row">
+        <div class="comment-row-main">
+          <div class="comment-row-head">
+            <strong data-role="author"></strong>
+            <span data-role="status" class="comment-status"></span>
+          </div>
+          <p data-role="content" class="muted-text"></p>
+        </div>
+        <div class="comment-row-meta">
+          <span data-role="post-title"></span>
+          <span data-role="date"></span>
+          <div class="comment-row-actions">
+            <button data-role="approve" class="secondary-button comment-action" type="button">通过</button>
+            <button data-role="reject" class="secondary-button comment-action is-danger" type="button">拒绝</button>
           </div>
         </div>
       </article>
