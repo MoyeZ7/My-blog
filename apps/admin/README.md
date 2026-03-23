@@ -21,6 +21,8 @@
 - 首页品牌文案与说明区文案管理
 - 后台标签列表与关键词筛选
 - 标签重命名与安全删除
+- 后台分类列表与关键词筛选
+- 分类重命名与删除迁移
 
 ## 启动方式
 
@@ -52,6 +54,9 @@ http://localhost:3002
 - `GET /api/admin/tags`
 - `PUT /api/admin/tags`
 - `DELETE /api/admin/tags`
+- `GET /api/admin/categories`
+- `PUT /api/admin/categories`
+- `DELETE /api/admin/categories`
 
 ## 当前默认账号
 
