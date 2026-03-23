@@ -1,0 +1,17 @@
+{
+  "name": "my-blog-master",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A from-scratch full-stack blog built in small, reviewable milestones.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --workspace @my-blog/api",
+    "start:api": "npm run start --workspace @my-blog/api",
+    "test:api": "npm run test --workspace @my-blog/api",
+    "dev:web": "npm run dev --workspace @my-blog/web",
+    "start:web": "npm run start --workspace @my-blog/web"
+  }
+}
