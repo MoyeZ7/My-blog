@@ -43,6 +43,12 @@ function setCreatePostMessage(message, isError = false) {
   node.classList.toggle("is-error", isError);
 }
 
+function setSiteConfigMessage(message, isError = false) {
+  const node = document.querySelector("#site-config-message");
+  node.textContent = message;
+  node.classList.toggle("is-error", isError);
+}
+
 function setEditorMode(isEditing) {
   document.querySelector("#editor-mode-label").textContent = isEditing ? "内容编辑" : "内容创建";
   document.querySelector("#editor-title").textContent = isEditing ? "编辑文章" : "新建文章";
@@ -317,6 +323,33 @@ async function loadAdminComments() {
   renderAdminComments(data.items, data.total);
 }
 
+async function loadAdminSiteConfig() {
+  const token = getStoredToken();
+
+  if (!token) {
+    return;
+  }
+
+  const data = await fetchJson("/api/admin/site-config", {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  document.querySelector("#site-brand-input").value = data.config.brandName;
+  document.querySelector("#site-header-note-input").value = data.config.headerNote;
+  document.querySelector("#site-hero-eyebrow-input").value = data.config.heroEyebrow;
+  document.querySelector("#site-hero-title-input").value = data.config.heroTitle;
+  document.querySelector("#site-hero-description-input").value = data.config.heroDescription;
+  document.querySelector("#site-panel-eyebrow-input").value = data.config.panelEyebrow;
+  document.querySelector("#site-panel-title-input").value = data.config.panelTitle;
+  document.querySelector("#site-panel-description-input").value = data.config.panelDescription;
+  document.querySelector("#site-feature-eyebrow-input").value = data.config.featureEyebrow;
+  document.querySelector("#site-feature-title-input").value = data.config.featureTitle;
+  document.querySelector("#site-feature-description-input").value = data.config.featureDescription;
+  document.querySelector("#site-config-summary").textContent = `最近更新：${data.config.updatedAt}`;
+}
+
 function bindLoginForm() {
   document.querySelector("#login-form").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -338,6 +371,7 @@ function bindLoginForm() {
       await loadDashboard();
       await loadAdminPosts();
       await loadAdminComments();
+      await loadAdminSiteConfig();
     } catch (error) {
       setMessage(error.message, true);
     }
@@ -540,6 +574,50 @@ function bindCommentActions() {
   });
 }
 
+function bindSiteConfigForm() {
+  document.querySelector("#site-config-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const token = getStoredToken();
+
+    if (!token) {
+      setSiteConfigMessage("请先登录后台。", true);
+      return;
+    }
+
+    const payload = {
+      brandName: document.querySelector("#site-brand-input").value.trim(),
+      headerNote: document.querySelector("#site-header-note-input").value.trim(),
+      heroEyebrow: document.querySelector("#site-hero-eyebrow-input").value.trim(),
+      heroTitle: document.querySelector("#site-hero-title-input").value.trim(),
+      heroDescription: document.querySelector("#site-hero-description-input").value.trim(),
+      panelEyebrow: document.querySelector("#site-panel-eyebrow-input").value.trim(),
+      panelTitle: document.querySelector("#site-panel-title-input").value.trim(),
+      panelDescription: document.querySelector("#site-panel-description-input").value.trim(),
+      featureEyebrow: document.querySelector("#site-feature-eyebrow-input").value.trim(),
+      featureTitle: document.querySelector("#site-feature-title-input").value.trim(),
+      featureDescription: document.querySelector("#site-feature-description-input").value.trim()
+    };
+
+    try {
+      const result = await fetchJson("/api/admin/site-config", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      setSiteConfigMessage(`站点配置已更新：${result.config.brandName}`);
+      document.querySelector("#site-config-summary").textContent = `最近更新：${result.config.updatedAt}`;
+      await loadAdminSiteConfig();
+    } catch (error) {
+      setSiteConfigMessage(error.message, true);
+    }
+  });
+}
+
 bindLoginForm();
 bindLogout();
 bindPostFilters();
@@ -548,10 +626,12 @@ bindPostActions();
 bindCreatePostForm();
 bindEditorControls();
 bindCommentActions();
+bindSiteConfigForm();
 
 setEditorMode(false);
 
 loadDashboard().then(async () => {
   await loadAdminPosts();
   await loadAdminComments();
+  await loadAdminSiteConfig();
 });
