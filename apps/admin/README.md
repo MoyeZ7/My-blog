@@ -8,6 +8,8 @@
 - 基于 API 的管理员登录流程
 - 后台仪表盘首页
 - 文章、分类、标签和站点统计概览
+- 后台文章列表
+- 文章关键词与分类筛选
 
 ## 启动方式
 
@@ -27,6 +29,7 @@ http://localhost:3002
 
 - `POST /api/admin/login`
 - `GET /api/admin/summary`
+- `GET /api/admin/posts`
 
 ## 当前默认账号
 

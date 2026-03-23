@@ -1,5 +1,9 @@
 const apiOrigin = window.localStorage.getItem("my-blog-api-origin") ?? "http://localhost:3001";
 const tokenKey = "my-blog-admin-token";
+const adminState = {
+  q: "",
+  category: ""
+};
 
 function getStoredToken() {
   return window.localStorage.getItem(tokenKey);
@@ -101,6 +105,60 @@ function renderTags(items) {
   );
 }
 
+function renderPostCategoryOptions(items) {
+  const root = document.querySelector("#post-category-select");
+  const options = [
+    '<option value="">全部分类</option>',
+    ...items.map((item) => {
+      const selected = adminState.category === item.name ? " selected" : "";
+      return `<option value="${item.name}"${selected}>${item.name}</option>`;
+    })
+  ];
+
+  root.innerHTML = options.join("");
+}
+
+function renderAdminPosts(items, total) {
+  const root = document.querySelector("#post-admin-list");
+  const template = document.querySelector("#post-row-template");
+  document.querySelector("#post-list-summary").textContent = `共 ${total} 篇文章`;
+
+  if (!items.length) {
+    const empty = document.createElement("p");
+    empty.className = "muted-text";
+    empty.textContent = "当前筛选条件下没有文章。";
+    root.replaceChildren(empty);
+    return;
+  }
+
+  root.replaceChildren(
+    ...items.map((item) => {
+      const fragment = template.content.cloneNode(true);
+      fragment.querySelector('[data-role="title"]').textContent = item.title;
+      fragment.querySelector('[data-role="excerpt"]').textContent = item.excerpt;
+      fragment.querySelector('[data-role="category"]').textContent = item.category;
+      fragment.querySelector('[data-role="status"]').textContent = item.status;
+      fragment.querySelector('[data-role="date"]').textContent = item.updatedAt;
+      return fragment;
+    })
+  );
+}
+
+function createPostQuery() {
+  const params = new URLSearchParams();
+
+  if (adminState.q) {
+    params.set("q", adminState.q);
+  }
+
+  if (adminState.category) {
+    params.set("category", adminState.category);
+  }
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
 async function loadDashboard() {
   const token = getStoredToken();
 
@@ -121,11 +179,28 @@ async function loadDashboard() {
     renderRecentPosts(data.summary.recentPosts);
     renderCategories(data.summary.categories);
     renderTags(data.summary.tags);
+    renderPostCategoryOptions(data.summary.categories);
     showDashboard();
   } catch (error) {
     clearStoredToken();
     showLogin();
   }
+}
+
+async function loadAdminPosts() {
+  const token = getStoredToken();
+
+  if (!token) {
+    return;
+  }
+
+  const data = await fetchJson(`/api/admin/posts${createPostQuery()}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  renderAdminPosts(data.items, data.total);
 }
 
 function bindLoginForm() {
@@ -147,6 +222,7 @@ function bindLoginForm() {
       setStoredToken(session.token);
       setMessage("登录成功，正在加载后台数据。");
       await loadDashboard();
+      await loadAdminPosts();
     } catch (error) {
       setMessage(error.message, true);
     }
@@ -161,6 +237,17 @@ function bindLogout() {
   });
 }
 
+function bindPostFilters() {
+  document.querySelector("#post-filter-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    adminState.q = document.querySelector("#post-search-input").value.trim();
+    adminState.category = document.querySelector("#post-category-select").value;
+    await loadAdminPosts();
+  });
+}
+
 bindLoginForm();
 bindLogout();
-loadDashboard();
+bindPostFilters();
+
+loadDashboard().then(loadAdminPosts);
