@@ -12,6 +12,7 @@ import {
   updateAdminPost
 } from "./admin-service.js";
 import {
+  createPublicComment,
   getPostBySlug,
   getSiteStats,
   listApprovedCommentsByPostSlug,
@@ -136,6 +137,33 @@ function handleGetRequest(pathname, searchParams, response) {
 }
 
 async function handlePostRequest(pathname, request, response) {
+  const publicCommentMatch = pathname.match(/^\/api\/posts\/([a-z0-9-]+)\/comments$/);
+
+  if (publicCommentMatch) {
+    let payload;
+
+    try {
+      payload = await readJsonBody(request);
+    } catch (error) {
+      sendJson(response, 400, {
+        message: "Invalid JSON body"
+      });
+      return;
+    }
+
+    const result = createPublicComment(publicCommentMatch[1], payload);
+
+    if (result.error) {
+      sendJson(response, 400, {
+        message: result.error
+      });
+      return;
+    }
+
+    sendJson(response, 201, result);
+    return;
+  }
+
   if (pathname === "/api/admin/login") {
     let credentials;
 

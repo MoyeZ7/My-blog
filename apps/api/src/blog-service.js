@@ -38,6 +38,15 @@ function toPostPreview(post) {
   };
 }
 
+function formatPublicComment(comment) {
+  return {
+    id: comment.id,
+    author: comment.author,
+    content: comment.content,
+    createdAt: comment.createdAt
+  };
+}
+
 export function listPosts(filters = {}) {
   const category = normalize(filters.category);
   const keyword = normalize(filters.q);
@@ -124,10 +133,51 @@ export function listApprovedCommentsByPostSlug(slug) {
   return comments
     .filter((comment) => comment.postSlug === slug && comment.status === "approved")
     .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))
-    .map((comment) => ({
-      id: comment.id,
-      author: comment.author,
-      content: comment.content,
-      createdAt: comment.createdAt
-    }));
+    .map(formatPublicComment);
+}
+
+export function createPublicComment(slug, input) {
+  const post = getPublishedPosts().find((item) => item.slug === slug);
+
+  if (!post) {
+    return {
+      error: "文章不存在"
+    };
+  }
+
+  const author = String(input.author ?? "").trim();
+  const content = String(input.content ?? "").trim();
+
+  if (!author) {
+    return {
+      error: "请填写称呼"
+    };
+  }
+
+  if (!content) {
+    return {
+      error: "请填写评论内容"
+    };
+  }
+
+  const nextId = comments.reduce((currentMax, comment) => Math.max(currentMax, comment.id), 0) + 1;
+  const createdAt = new Date().toISOString().slice(0, 10);
+  const comment = {
+    id: nextId,
+    postSlug: slug,
+    author,
+    content,
+    createdAt,
+    status: "pending"
+  };
+
+  comments.unshift(comment);
+
+  return {
+    message: "评论已提交，审核通过后展示。",
+    comment: {
+      ...formatPublicComment(comment),
+      status: "待审核"
+    }
+  };
 }
