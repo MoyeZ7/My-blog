@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { comments } from "../../../packages/content/src/comments.js";
 import { posts } from "../../../packages/content/src/posts.js";
+import { siteConfig } from "../../../packages/content/src/site-config.js";
 import { getSiteStats, listApprovedCommentsByPostSlug, listPosts } from "../src/blog-service.js";
 import {
   createAdminPost,
@@ -9,11 +10,13 @@ import {
   getAdminPostBySlug,
   getAdminDashboardSummary,
   getAdminSession,
+  getAdminSiteConfig,
   listAdminComments,
   listAdminPosts,
   loginAdmin,
   updateAdminCommentStatus,
-  updateAdminPost
+  updateAdminPost,
+  updateAdminSiteConfig
 } from "../src/admin-service.js";
 
 test("loginAdmin creates a reusable session for valid credentials", () => {
@@ -161,4 +164,38 @@ test("listAdminComments and updateAdminCommentStatus manage moderation state", (
   assert.equal(listApprovedCommentsByPostSlug("designing-a-blog-from-first-principles").length, 1);
 
   comments.find((item) => item.id === 3).status = "pending";
+});
+
+test("getAdminSiteConfig and updateAdminSiteConfig manage editable site copy", () => {
+  const previousConfig = { ...siteConfig };
+  const detail = getAdminSiteConfig();
+
+  assert.equal(detail.config.brandName, "我的博客");
+
+  const invalidResult = updateAdminSiteConfig({
+    brandName: "",
+    heroTitle: "",
+    heroDescription: ""
+  });
+
+  assert.equal(invalidResult.error, "站点名称不能为空");
+
+  const updateResult = updateAdminSiteConfig({
+    brandName: "我的博客实验室",
+    headerNote: "让首页文案可以被后台调整。",
+    heroEyebrow: "内容产品实验",
+    heroTitle: "让首页主叙事也进入内容工作流。",
+    heroDescription: "前台首页的主视觉文案，不应该永远写死在模板里。",
+    panelEyebrow: "本轮重点",
+    panelTitle: "站点配置已接通",
+    panelDescription: "后台现在可以直接驱动首页的关键信息区。",
+    featureEyebrow: "配置说明",
+    featureTitle: "为什么现在做配置",
+    featureDescription: "因为这会让前台内容和后台管理第一次真正打通。"
+  });
+
+  assert.equal(updateResult.config.brandName, "我的博客实验室");
+  assert.equal(siteConfig.panelTitle, "站点配置已接通");
+
+  Object.assign(siteConfig, previousConfig);
 });

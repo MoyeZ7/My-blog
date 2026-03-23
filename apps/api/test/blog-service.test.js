@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { comments } from "../../../packages/content/src/comments.js";
 import {
   createPublicComment,
+  getPublicSiteConfig,
   getPostBySlug,
   getSiteStats,
   listApprovedCommentsByPostSlug,
@@ -95,4 +96,12 @@ test("createPublicComment validates fields and keeps new comments pending by def
 
   comments.splice(0, 1);
   assert.equal(comments.length, beforeCount);
+});
+
+test("getPublicSiteConfig exposes homepage and brand copy", () => {
+  const config = getPublicSiteConfig();
+
+  assert.equal(config.brandName, "我的博客");
+  assert.ok(config.heroTitle.length > 0);
+  assert.ok(config.featureDescription.length > 0);
 });
