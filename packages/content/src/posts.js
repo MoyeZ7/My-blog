@@ -2,16 +2,16 @@ export const posts = [
   {
     id: 1,
     slug: "designing-a-blog-from-first-principles",
-    title: "Designing a Blog From First Principles",
+    title: "从零开始重构博客系统的第一原则",
     excerpt:
-      "A rebuild starts by choosing what should stay from the reference project and what should be redesigned for a cleaner workflow.",
+      "真正的重构不是把旧模板原样搬过来，而是先拆清内容模型、访问路径和后续可提交的工作边界。",
     content: [
-      "A blog is more than a list of posts. It is navigation, editorial rhythm, and operational tooling.",
-      "The original template proves the product shape. This rebuild keeps that shape, but it starts with thinner boundaries and smaller commits.",
-      "That means an API first, a focused public site second, and an admin surface after the reading experience is stable."
+      "一个博客系统的核心并不是“文章列表”这一个页面，而是内容如何被组织、如何被阅读，以及后续如何被管理。",
+      "参考模板已经证明了产品方向成立，所以新的实现不需要抄结构，而是要重新定义更适合当前工作流的分层方式。",
+      "这也是为什么这次实现先落 API 和公开阅读端，再逐步进入后台与数据持久化。这样每一步都能独立提交、独立验证。"
     ],
-    category: "Architecture",
-    tags: ["planning", "workflow", "full-stack"],
+    category: "架构",
+    tags: ["重构", "工作流", "全栈"],
     coverImage:
       "https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1200&q=80",
     publishedAt: "2026-03-23"
@@ -19,35 +19,52 @@ export const posts = [
   {
     id: 2,
     slug: "editorial-layouts-that-do-not-feel-generic",
-    title: "Editorial Layouts That Do Not Feel Generic",
+    title: "如何做出不普通的中文博客首页",
     excerpt:
-      "Strong blog interfaces rely on contrast, pacing, and typography instead of default card grids and anonymous spacing.",
+      "博客首页不能只是卡片堆叠，真正有辨识度的页面要靠节奏、留白、层级和信息密度的控制。",
     content: [
-      "The fastest way to make a blog feel forgettable is to let every section have the same weight.",
-      "Editorial layouts need tension: a large lead story, quieter secondary entries, and a cadence that rewards scrolling.",
-      "This project will keep that in mind as the public-facing pages grow past the initial scaffold."
+      "很多博客页面看起来“整齐”，但读起来没有记忆点，原因通常是所有模块的视觉权重都太接近。",
+      "更好的方式是让首屏承担叙事，让文章区承担信息密度，让侧栏承担导航和状态感，这样用户进入页面就能知道先看哪里。",
+      "对于中文博客来说，字体、行高、段落宽度也比英文界面更重要，因为阅读疲劳会更早出现。"
     ],
-    category: "Design",
-    tags: ["ui", "editorial", "frontend"],
+    category: "设计",
+    tags: ["界面", "排版", "前端"],
     coverImage:
       "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=1200&q=80",
-    publishedAt: "2026-03-20"
+    publishedAt: "2026-03-21"
   },
   {
     id: 3,
     slug: "what-to-build-before-an-admin-panel",
-    title: "What to Build Before an Admin Panel",
+    title: "后台面板之前，应该先把什么做对",
     excerpt:
-      "A stable content model and reading flow should exist before the dashboard becomes the main focus.",
+      "如果公开阅读体验和内容结构都还不稳定，过早去做后台，最后往往只是在管理一个还没定义清楚的系统。",
     content: [
-      "Admin tooling matters, but it should sit on top of a product that already knows what a post, category, and reading page mean.",
-      "By building public flows first, we can keep the admin area honest and avoid scaffolding pages that manage unfinished concepts.",
-      "That tradeoff is slower in the first hour and faster across the next ten commits."
+      "后台不是不能先做，而是不应该先主导系统设计。系统首先要知道“文章是什么”“分类和标签如何工作”“详情页需要承载什么”。",
+      "只有这些概念稳定下来，后台新增、编辑、审核这些动作才不会变成重复返工。",
+      "因此这个项目当前先把公开端做好，再进入后台壳子和内容编辑流，这是更稳妥的顺序。"
     ],
-    category: "Backend",
-    tags: ["admin", "scope", "product"],
+    category: "后端",
+    tags: ["后台", "产品", "范围控制"],
     coverImage:
       "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1200&q=80",
-    publishedAt: "2026-03-18"
+    publishedAt: "2026-03-19"
+  },
+  {
+    id: 4,
+    slug: "building-better-reading-rhythm",
+    title: "让文章列表更有阅读节奏的几个方法",
+    excerpt:
+      "列表页不是目录页的别名。只要文章之间有主次、有呼吸感，页面就会从“信息堆积”变成“内容编排”。",
+    content: [
+      "首页的任务不是把全部内容平铺给用户，而是帮助用户快速建立方向感：最新内容是什么、主题分布如何、从哪里开始读最合适。",
+      "因此文章卡片除了标题和摘要，还应该给出分类、标签、阅读时长这些轻量信息，帮助读者判断是否值得点开。",
+      "当这些基础元素都到位之后，博客才会更像一个有编辑意识的内容站点，而不是单纯的数据列表。"
+    ],
+    category: "设计",
+    tags: ["阅读体验", "首页", "内容策略"],
+    coverImage:
+      "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=80",
+    publishedAt: "2026-03-17"
   }
 ];

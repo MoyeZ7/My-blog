@@ -1,9 +1,18 @@
 import { posts } from "../../../packages/content/src/posts.js";
 
+function normalize(value) {
+  return value?.trim().toLowerCase() ?? "";
+}
+
 function sortByPublishedDate(items) {
   return [...items].sort((left, right) => {
     return new Date(right.publishedAt) - new Date(left.publishedAt);
   });
+}
+
+function estimateReadingTime(content) {
+  const totalLength = content.join("").replace(/\s+/g, "").length;
+  return Math.max(1, Math.ceil(totalLength / 320));
 }
 
 function toPostPreview(post) {
@@ -15,19 +24,34 @@ function toPostPreview(post) {
     category: post.category,
     tags: post.tags,
     coverImage: post.coverImage,
-    publishedAt: post.publishedAt
+    publishedAt: post.publishedAt,
+    readingTimeMinutes: estimateReadingTime(post.content)
   };
 }
 
 export function listPosts(filters = {}) {
-  const category = filters.category?.trim().toLowerCase();
+  const category = normalize(filters.category);
+  const keyword = normalize(filters.q);
+  const tag = normalize(filters.tag);
 
   const filteredPosts = posts.filter((post) => {
-    if (!category) {
+    if (category && normalize(post.category) !== category) {
+      return false;
+    }
+
+    if (tag && !post.tags.some((item) => normalize(item) === tag)) {
+      return false;
+    }
+
+    if (!keyword) {
       return true;
     }
 
-    return post.category.toLowerCase() === category;
+    const searchTarget = [post.title, post.excerpt, post.category, ...post.tags, ...post.content]
+      .join(" ")
+      .toLowerCase();
+
+    return searchTarget.includes(keyword);
   });
 
   return sortByPublishedDate(filteredPosts).map(toPostPreview);
@@ -42,6 +66,7 @@ export function getPostBySlug(slug) {
 
   return {
     ...post,
+    readingTimeMinutes: estimateReadingTime(post.content),
     relatedPosts: listPosts({ category: post.category })
       .filter((item) => item.slug !== post.slug)
       .slice(0, 2)
@@ -59,4 +84,27 @@ export function listCategories() {
   return [...categoryMap.entries()]
     .map(([name, count]) => ({ name, count }))
     .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name));
+}
+
+export function listTags() {
+  const tagMap = new Map();
+
+  for (const post of posts) {
+    for (const tag of post.tags) {
+      const current = tagMap.get(tag) ?? 0;
+      tagMap.set(tag, current + 1);
+    }
+  }
+
+  return [...tagMap.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name, "zh-Hans-CN"));
+}
+
+export function getSiteStats() {
+  return {
+    postCount: posts.length,
+    categoryCount: listCategories().length,
+    tagCount: listTags().length
+  };
 }

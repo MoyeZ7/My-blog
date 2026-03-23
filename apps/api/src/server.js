@@ -1,5 +1,5 @@
 import http from "node:http";
-import { getPostBySlug, listCategories, listPosts } from "./blog-service.js";
+import { getPostBySlug, getSiteStats, listCategories, listPosts, listTags } from "./blog-service.js";
 import { sendJson, sendNotFound } from "./response.js";
 
 const port = Number(process.env.PORT ?? 3001);
@@ -16,7 +16,9 @@ function handleGetRequest(pathname, searchParams, response) {
   if (pathname === "/api/posts") {
     sendJson(response, 200, {
       items: listPosts({
-        category: searchParams.get("category")
+        category: searchParams.get("category"),
+        q: searchParams.get("q"),
+        tag: searchParams.get("tag")
       })
     });
     return;
@@ -26,6 +28,18 @@ function handleGetRequest(pathname, searchParams, response) {
     sendJson(response, 200, {
       items: listCategories()
     });
+    return;
+  }
+
+  if (pathname === "/api/tags") {
+    sendJson(response, 200, {
+      items: listTags()
+    });
+    return;
+  }
+
+  if (pathname === "/api/stats") {
+    sendJson(response, 200, getSiteStats());
     return;
   }
 
