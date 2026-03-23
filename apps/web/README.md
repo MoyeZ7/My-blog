@@ -6,7 +6,9 @@
 
 - 中文首页与文章详情页
 - 搜索、分类、标签、站点统计
+- 首页品牌文案与说明区配置驱动
 - 文章详情阅读信息与相关文章
+- 文章详情页品牌名称配置驱动
 - 文章详情页公开评论展示
 - 访客评论提交，提交后进入审核流程
 
@@ -30,6 +32,7 @@ http://localhost:3000
 - `GET /api/posts/:slug`
 - `GET /api/posts/:slug/comments`
 - `POST /api/posts/:slug/comments`
+- `GET /api/site-config`
 - `GET /api/categories`
 - `GET /api/tags`
 - `GET /api/stats`

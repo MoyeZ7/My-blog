@@ -17,6 +17,8 @@
 - 后台删除文章
 - 后台评论列表与筛选
 - 评论通过 / 拒绝审核
+- 后台站点配置编辑
+- 首页品牌文案与说明区文案管理
 
 ## 启动方式
 
@@ -43,6 +45,8 @@ http://localhost:3002
 - `DELETE /api/admin/posts/:slug`
 - `GET /api/admin/comments`
 - `PUT /api/admin/comments/:id`
+- `GET /api/admin/site-config`
+- `PUT /api/admin/site-config`
 
 ## 当前默认账号
 
