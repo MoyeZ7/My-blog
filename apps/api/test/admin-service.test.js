@@ -7,13 +7,16 @@ import { getSiteStats, listApprovedCommentsByPostSlug, listPosts } from "../src/
 import {
   createAdminPost,
   deleteAdminPost,
+  deleteAdminTag,
   getAdminPostBySlug,
   getAdminDashboardSummary,
   getAdminSession,
   getAdminSiteConfig,
   listAdminComments,
   listAdminPosts,
+  listAdminTags,
   loginAdmin,
+  renameAdminTag,
   updateAdminCommentStatus,
   updateAdminPost,
   updateAdminSiteConfig
@@ -198,4 +201,52 @@ test("getAdminSiteConfig and updateAdminSiteConfig manage editable site copy", (
   assert.equal(siteConfig.panelTitle, "站点配置已接通");
 
   Object.assign(siteConfig, previousConfig);
+});
+
+test("listAdminTags can filter tags by keyword", () => {
+  const allTags = listAdminTags();
+  const filteredTags = listAdminTags({ q: "范围控制" });
+
+  assert.equal(allTags.total, 12);
+  assert.equal(filteredTags.total, 1);
+  assert.equal(filteredTags.items[0].name, "范围控制");
+  assert.equal(filteredTags.items[0].relatedPosts[0], "后台面板之前，应该先把什么做对");
+});
+
+test("renameAdminTag updates related posts and deleteAdminTag removes a reusable tag", () => {
+  const originalUpdatedAt = posts[0].updatedAt;
+
+  const renameResult = renameAdminTag("重构", "系统重构");
+
+  assert.equal(renameResult.tag?.name, "系统重构");
+  assert.ok(posts[0].tags.includes("系统重构"));
+  assert.ok(!posts[0].tags.includes("重构"));
+
+  const deleteResult = deleteAdminTag("工作流");
+
+  assert.equal(deleteResult.tag?.name, "工作流");
+  assert.ok(!posts[0].tags.includes("工作流"));
+  assert.equal(posts[0].tags.length, 2);
+
+  posts[0].tags = ["重构", "工作流", "全栈"];
+  posts[0].updatedAt = originalUpdatedAt;
+});
+
+test("deleteAdminTag refuses to remove the only tag from a related post", () => {
+  const createResult = createAdminPost({
+    title: "唯一标签测试文章",
+    excerpt: "用于验证唯一标签保护。",
+    category: "测试",
+    tags: "唯一标签",
+    content: "用于验证标签删除保护。",
+    status: "draft"
+  });
+
+  assert.ok(createResult.post);
+
+  const deleteResult = deleteAdminTag("唯一标签");
+
+  assert.equal(deleteResult.error, "无法删除唯一标签，请先为相关文章补充其他标签");
+
+  posts.splice(0, 1);
 });
