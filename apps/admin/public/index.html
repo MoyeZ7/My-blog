@@ -79,6 +79,78 @@
           <article class="panel panel-wide">
             <div class="section-head section-head-split">
               <div>
+                <p class="eyebrow">内容创建</p>
+                <h2>新建文章</h2>
+              </div>
+              <p id="create-post-message" class="muted-text"></p>
+            </div>
+
+            <form id="create-post-form" class="create-post-form">
+              <label class="field field-wide">
+                <span>标题</span>
+                <input id="create-title-input" name="title" placeholder="输入文章标题" />
+              </label>
+
+              <label class="field">
+                <span>分类</span>
+                <input id="create-category-input" name="category" placeholder="例如：设计" />
+              </label>
+
+              <label class="field">
+                <span>状态</span>
+                <select id="create-status-select" class="filter-select" name="status">
+                  <option value="published">发布</option>
+                  <option value="draft">草稿</option>
+                </select>
+              </label>
+
+              <label class="field field-wide">
+                <span>摘要</span>
+                <textarea
+                  id="create-excerpt-input"
+                  name="excerpt"
+                  class="field-textarea field-textarea-short"
+                  placeholder="输入文章摘要"
+                ></textarea>
+              </label>
+
+              <label class="field field-wide">
+                <span>标签</span>
+                <input
+                  id="create-tags-input"
+                  name="tags"
+                  placeholder="多个标签用逗号分隔，例如：后台, 工作流"
+                />
+              </label>
+
+              <label class="field field-wide">
+                <span>封面图</span>
+                <input
+                  id="create-cover-input"
+                  name="coverImage"
+                  placeholder="可选，输入图片 URL"
+                />
+              </label>
+
+              <label class="field field-wide">
+                <span>正文</span>
+                <textarea
+                  id="create-content-input"
+                  name="content"
+                  class="field-textarea"
+                  placeholder="每个自然段换行即可"
+                ></textarea>
+              </label>
+
+              <div class="create-post-actions">
+                <button class="primary-button" type="submit">保存文章</button>
+              </div>
+            </form>
+          </article>
+
+          <article class="panel panel-wide">
+            <div class="section-head section-head-split">
+              <div>
                 <p class="eyebrow">文章管理</p>
                 <h2>文章列表</h2>
               </div>
