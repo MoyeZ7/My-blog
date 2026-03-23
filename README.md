@@ -1,42 +1,89 @@
 # My Blog Master
 
-`My Blog Master` is a new full-stack rebuild that takes visual and feature inspiration from `../My-Blog-Test` without copying the original one-to-one.
+`My Blog Master` 是一个从零开始重建的全栈博客项目。
 
-The reference project is a Spring Boot monolith. This rebuild starts with a lighter monorepo so the work can be committed in small, normal development steps:
+它参考了 `../My-Blog-Test` 的产品形态和部分功能方向，但并不直接复制原模板，而是以更清晰的分层结构和更适合逐步提交的工作流重新实现。
 
-1. `chore`: initialize repository and milestone plan.
-2. `feat(api)`: add a minimal blog API with seeded content.
-3. `feat(web)`: add a blog-facing web app that consumes the API.
-4. `feat(admin)`: add a lightweight admin area for content operations.
-5. `feat(data)`: move from seeded data to persistent storage.
+当前版本已经完成了三个基础阶段：
 
-## Structure
+1. `chore`：初始化仓库、目录结构和阶段规划
+2. `feat(api)`：搭建博客 API，提供文章、分类、标签和站点统计接口
+3. `feat(web)`：搭建中文公开站点，完成首页、搜索、标签筛选和文章详情页
+
+## 项目定位
+
+这个项目的目标不是简单做一个“能发文章”的页面，而是逐步搭建一个完整的博客系统：
+
+- 面向读者的公开阅读端
+- 面向作者的后台管理端
+- 从种子数据过渡到持久化存储
+- 保持每个阶段都能独立运行、独立提交、独立验证
+
+## 当前能力
+
+当前已经具备的功能：
+
+- 中文首页展示
+- 中文文章详情页
+- 分类筛选
+- 标签筛选
+- 关键词搜索
+- 阅读时长展示
+- 站点文章 / 分类 / 标签统计
+
+## 项目结构
 
 ```text
 My-blog-master
 ├── apps
-│   ├── api
-│   └── web
-├── docs
+│   ├── api          # 博客后端接口
+│   └── web          # 公开前台页面
+├── docs             # 构建说明和阶段文档
 └── packages
-    └── content
+    └── content      # 种子内容与后续共享数据结构
 ```
 
-## Current direction
+## 技术方向
 
-- Keep the editorial blog feel from the template.
-- Use a fresh implementation and cleaner boundaries.
-- Prefer zero-dependency building blocks first so each stage remains runnable in this environment.
+当前实现优先考虑“可运行、可拆分、可验证”，因此先采用较轻量的结构：
 
-## Reference mapping
+- `apps/api`：Node.js 原生 HTTP 服务
+- `apps/web`：Node.js 静态站点服务 + 原生前端脚本
+- `packages/content`：共享文章种子数据
 
-The target feature set will loosely map to the template:
+后续会在这个基础上继续演进后台、持久化和内容管理能力。
 
-- public homepage and article detail pages
-- category and tag navigation
-- comments and friend links later
-- admin dashboard later
+## 启动方式
 
-## Commands
+在项目根目录执行：
 
-The first runnable commands will be added as the API and web apps land in separate commits.
+```bash
+npm run start:api
+npm run start:web
+```
+
+启动后访问：
+
+- 前台页面：`http://localhost:3000`
+- API 服务：`http://localhost:3001`
+
+常用开发命令：
+
+```bash
+npm run dev:api
+npm run test:api
+npm run dev:web
+```
+
+## 后续计划
+
+下一阶段会继续补齐后台管理方向的能力，包括：
+
+- 管理端登录页
+- 管理后台壳子
+- 文章新增与编辑流程
+- 后续接入数据库持久化
+
+## 说明
+
+这个仓库当前采用“按阶段逐次提交”的方式推进，Git 历史会尽量保持为清晰的构建过程，而不是一次性堆叠所有功能。

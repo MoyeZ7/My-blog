@@ -1,49 +1,87 @@
-# Build Plan
+# 构建计划
 
-## Goal
+## 目标
 
-Rebuild `my blog` from scratch in `My-blog-master`, using `My-Blog-Test` as a feature and design reference instead of a direct clone.
+在 `My-blog-master` 中从零开始重建一个新的 `my blog` 全栈项目，以 `My-Blog-Test` 作为参考模板，但不做一比一复刻。
 
-## Why this differs from the template
+重点不是“照着原项目重写一遍”，而是：
 
-The template is a single Spring Boot application with server-rendered pages. For a stepwise workflow, this rebuild starts as a monorepo with clearly separated apps:
+- 保留博客产品的核心形态
+- 重新设计更清晰的项目结构
+- 让每一个阶段都能单独提交和验证
+- 为后续后台与数据库演进留出空间
 
-- `apps/api`: backend API
-- `apps/web`: public-facing site
-- `packages/content`: shared seed content and later shared schemas
+## 为什么不直接照搬模板
 
-This gives us smaller commits, clearer review boundaries, and room to evolve the stack.
+参考模板本质上是一个传统单体应用，而当前重建项目采用的是更适合分阶段推进的 monorepo 结构：
 
-## Planned milestones
+- `apps/api`：后端接口服务
+- `apps/web`：公开博客前台
+- `packages/content`：共享种子内容和后续共享结构
 
-### Milestone 1
+这样做的好处是：
 
-- initialize git repository
-- add monorepo skeleton
-- document delivery plan
+- 每一阶段职责更清楚
+- 每次提交粒度更小
+- 更方便按模块逐步推进
+- 后面接入后台和持久化时改动范围更容易控制
 
-### Milestone 2
+## 已完成阶段
 
-- add minimal API
-- expose health, post list, post detail, and categories
-- seed content from shared package
+### 阶段 1：框架初始化
 
-### Milestone 3
+- 初始化 Git 仓库
+- 建立 monorepo 基础结构
+- 建立 `apps / packages / docs` 目录
+- 编写基础说明文档
 
-- add public web app
-- build homepage and post detail page
-- connect frontend to API
+### 阶段 2：API 构建
 
-### Milestone 4
+- 完成博客 API 基础服务
+- 提供健康检查接口
+- 提供文章列表与文章详情接口
+- 提供分类、标签、站点统计接口
+- 完成基础测试
 
-- add admin login and dashboard shell
-- add create and edit flows for posts
+### 阶段 3：Web 构建
 
-### Milestone 5
+- 完成中文首页
+- 完成文章详情页
+- 接入 API 数据
+- 增加搜索、分类筛选、标签筛选
+- 增加阅读时长和统计展示
 
-- replace in-memory content with persistent storage
-- add comments, links, and moderation flows
+## 后续阶段
 
-## Commit strategy
+### 阶段 4：后台管理端
 
-Use small conventional commits so each stage is independently understandable and reversible.
+- 增加后台登录页
+- 搭建后台管理壳子
+- 增加文章创建与编辑流
+
+### 阶段 5：数据持久化
+
+- 从内存种子数据迁移到数据库
+- 建立文章、分类、标签等持久化模型
+- 为评论、友链、审核等能力打基础
+
+## 提交策略
+
+整个项目按照“框架 -> API -> Web -> Admin -> Data”的顺序推进。
+
+提交策略遵循以下原则：
+
+- 每个阶段单独提交
+- 每次提交都尽量保持可运行
+- 提交信息尽量体现当前阶段的建设目标
+- 避免把多个大功能混在一次提交里
+
+## 当前状态
+
+当前远端和本地已经整理为以下三次顺序提交：
+
+1. `chore: initialize my-blog monorepo`
+2. `feat(api): add seeded blog api`
+3. `feat(web): build chinese public blog frontend`
+
+后续新增内容会继续沿着这个阶段化思路推进。
