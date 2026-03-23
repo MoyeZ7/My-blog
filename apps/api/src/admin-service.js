@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { getSiteStats, listCategories, listPosts, listTags } from "./blog-service.js";
+import { posts } from "../../../packages/content/src/posts.js";
+import { listPosts } from "./blog-service.js";
 
 const sessions = new Map();
 const adminCredentials = {
@@ -7,6 +8,105 @@ const adminCredentials = {
   password: process.env.ADMIN_PASSWORD ?? "123456",
   displayName: process.env.ADMIN_DISPLAY_NAME ?? "站点管理员"
 };
+const defaultCoverImage =
+  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80";
+
+function normalize(value) {
+  return value?.trim() ?? "";
+}
+
+function normalizeStatus(status) {
+  return status === "draft" ? "draft" : "published";
+}
+
+function getReadingTime(content) {
+  const totalLength = content.join("").replace(/\s+/g, "").length;
+  return Math.max(1, Math.ceil(totalLength / 320));
+}
+
+function slugify(value) {
+  const normalized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  if (normalized) {
+    return normalized;
+  }
+
+  return `post-${Date.now()}`;
+}
+
+function parseTags(value) {
+  return [...new Set(
+    String(value ?? "")
+      .split(/[,\n，]/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+  )];
+}
+
+function parseContent(value) {
+  return String(value ?? "")
+    .split(/\n+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function formatAdminPost(post) {
+  const status = normalizeStatus(post.status);
+  const activityDate = post.updatedAt ?? post.publishedAt ?? new Date().toISOString().slice(0, 10);
+
+  return {
+    id: post.id,
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt,
+    category: post.category,
+    tags: post.tags,
+    coverImage: post.coverImage,
+    publishedAt: post.publishedAt,
+    readingTimeMinutes: getReadingTime(post.content),
+    status: status === "draft" ? "草稿" : "已发布",
+    updatedAt: activityDate
+  };
+}
+
+function listAdminCategories() {
+  const categoryMap = new Map();
+
+  for (const post of posts) {
+    const current = categoryMap.get(post.category) ?? 0;
+    categoryMap.set(post.category, current + 1);
+  }
+
+  return [...categoryMap.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name, "zh-Hans-CN"));
+}
+
+function listAdminTags() {
+  const tagMap = new Map();
+
+  for (const post of posts) {
+    for (const tag of post.tags) {
+      const current = tagMap.get(tag) ?? 0;
+      tagMap.set(tag, current + 1);
+    }
+  }
+
+  return [...tagMap.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name, "zh-Hans-CN"));
+}
+
+function getAdminStats() {
+  return {
+    postCount: posts.length,
+    categoryCount: listAdminCategories().length,
+    tagCount: listAdminTags().length
+  };
+}
 
 export function loginAdmin({ username, password }) {
   if (username !== adminCredentials.username || password !== adminCredentials.password) {
@@ -35,22 +135,113 @@ export function getAdminSession(token) {
 
 export function getAdminDashboardSummary() {
   return {
-    stats: getSiteStats(),
-    recentPosts: listPosts().slice(0, 4),
-    categories: listCategories().slice(0, 5),
-    tags: listTags().slice(0, 8)
+    stats: getAdminStats(),
+    recentPosts: listAdminPosts().items.slice(0, 4),
+    categories: listAdminCategories().slice(0, 5),
+    tags: listAdminTags().slice(0, 8)
   };
 }
 
 export function listAdminPosts(filters = {}) {
-  const items = listPosts(filters).map((post) => ({
-    ...post,
-    status: "已发布",
-    updatedAt: post.publishedAt
-  }));
+  const keyword = normalize(filters.q).toLowerCase();
+  const category = normalize(filters.category).toLowerCase();
+
+  const items = [...posts]
+    .filter((post) => {
+      if (category && post.category.toLowerCase() !== category) {
+        return false;
+      }
+
+      if (!keyword) {
+        return true;
+      }
+
+      const searchTarget = [post.title, post.excerpt, post.category, ...post.tags, ...post.content]
+        .join(" ")
+        .toLowerCase();
+
+      return searchTarget.includes(keyword);
+    })
+    .sort((left, right) => {
+      const leftDate = new Date(left.updatedAt ?? left.publishedAt ?? 0);
+      const rightDate = new Date(right.updatedAt ?? right.publishedAt ?? 0);
+      return rightDate - leftDate;
+    })
+    .map(formatAdminPost);
 
   return {
     items,
     total: items.length
+  };
+}
+
+export function createAdminPost(input) {
+  const title = normalize(input.title);
+  const excerpt = normalize(input.excerpt);
+  const category = normalize(input.category);
+  const coverImage = normalize(input.coverImage) || defaultCoverImage;
+  const tags = parseTags(input.tags);
+  const content = parseContent(input.content);
+  const status = normalizeStatus(input.status);
+
+  if (!title) {
+    return {
+      error: "标题不能为空"
+    };
+  }
+
+  if (!excerpt) {
+    return {
+      error: "摘要不能为空"
+    };
+  }
+
+  if (!category) {
+    return {
+      error: "分类不能为空"
+    };
+  }
+
+  if (!tags.length) {
+    return {
+      error: "至少需要一个标签"
+    };
+  }
+
+  if (!content.length) {
+    return {
+      error: "正文不能为空"
+    };
+  }
+
+  const slug = normalize(input.slug) || slugify(title);
+
+  if (posts.some((post) => post.slug === slug)) {
+    return {
+      error: "Slug 已存在，请更换标题或自定义 slug"
+    };
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const nextId = posts.reduce((currentMax, post) => Math.max(currentMax, post.id), 0) + 1;
+
+  const post = {
+    id: nextId,
+    slug,
+    title,
+    excerpt,
+    content,
+    category,
+    tags,
+    coverImage,
+    publishedAt: status === "published" ? today : null,
+    updatedAt: today,
+    status
+  };
+
+  posts.unshift(post);
+
+  return {
+    post: formatAdminPost(post)
   };
 }

@@ -1,5 +1,6 @@
 import http from "node:http";
 import {
+  createAdminPost,
   getAdminDashboardSummary,
   getAdminSession,
   listAdminPosts,
@@ -137,6 +138,43 @@ async function handlePostRequest(pathname, request, response) {
     }
 
     sendJson(response, 200, session);
+    return;
+  }
+
+  if (pathname === "/api/admin/posts") {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    let payload;
+
+    try {
+      payload = await readJsonBody(request);
+    } catch (error) {
+      sendJson(response, 400, {
+        message: "Invalid JSON body"
+      });
+      return;
+    }
+
+    const result = createAdminPost(payload);
+
+    if (result.error) {
+      sendJson(response, 400, {
+        message: result.error
+      });
+      return;
+    }
+
+    sendJson(response, 201, {
+      session: {
+        username: session.username,
+        displayName: session.displayName
+      },
+      ...result
+    });
     return;
   }
 

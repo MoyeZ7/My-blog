@@ -4,6 +4,14 @@ function normalize(value) {
   return value?.trim().toLowerCase() ?? "";
 }
 
+function getPostStatus(post) {
+  return post.status ?? "published";
+}
+
+function getPublishedPosts() {
+  return posts.filter((post) => getPostStatus(post) === "published");
+}
+
 function sortByPublishedDate(items) {
   return [...items].sort((left, right) => {
     return new Date(right.publishedAt) - new Date(left.publishedAt);
@@ -34,7 +42,7 @@ export function listPosts(filters = {}) {
   const keyword = normalize(filters.q);
   const tag = normalize(filters.tag);
 
-  const filteredPosts = posts.filter((post) => {
+  const filteredPosts = getPublishedPosts().filter((post) => {
     if (category && normalize(post.category) !== category) {
       return false;
     }
@@ -58,7 +66,7 @@ export function listPosts(filters = {}) {
 }
 
 export function getPostBySlug(slug) {
-  const post = posts.find((item) => item.slug === slug);
+  const post = getPublishedPosts().find((item) => item.slug === slug);
 
   if (!post) {
     return null;
@@ -76,7 +84,7 @@ export function getPostBySlug(slug) {
 export function listCategories() {
   const categoryMap = new Map();
 
-  for (const post of posts) {
+  for (const post of getPublishedPosts()) {
     const current = categoryMap.get(post.category) ?? 0;
     categoryMap.set(post.category, current + 1);
   }
@@ -89,7 +97,7 @@ export function listCategories() {
 export function listTags() {
   const tagMap = new Map();
 
-  for (const post of posts) {
+  for (const post of getPublishedPosts()) {
     for (const tag of post.tags) {
       const current = tagMap.get(tag) ?? 0;
       tagMap.set(tag, current + 1);
@@ -102,8 +110,10 @@ export function listTags() {
 }
 
 export function getSiteStats() {
+  const publishedPosts = getPublishedPosts();
+
   return {
-    postCount: posts.length,
+    postCount: publishedPosts.length,
     categoryCount: listCategories().length,
     tagCount: listTags().length
   };
