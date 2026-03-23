@@ -124,6 +124,20 @@ function formatAdminComment(comment) {
   };
 }
 
+function formatAdminTag(name, count) {
+  const relatedPosts = posts
+    .filter((post) => post.tags.includes(name))
+    .map((post) => post.title)
+    .slice(0, 3);
+
+  return {
+    name,
+    count,
+    postCount: count,
+    relatedPosts
+  };
+}
+
 function listAdminCategories() {
   const categoryMap = new Map();
 
@@ -137,7 +151,7 @@ function listAdminCategories() {
     .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name, "zh-Hans-CN"));
 }
 
-function listAdminTags() {
+function collectAdminTags() {
   const tagMap = new Map();
 
   for (const post of posts) {
@@ -148,7 +162,7 @@ function listAdminTags() {
   }
 
   return [...tagMap.entries()]
-    .map(([name, count]) => ({ name, count }))
+    .map(([name, count]) => formatAdminTag(name, count))
     .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name, "zh-Hans-CN"));
 }
 
@@ -156,7 +170,7 @@ function getAdminStats() {
   return {
     postCount: posts.length,
     categoryCount: listAdminCategories().length,
-    tagCount: listAdminTags().length
+    tagCount: collectAdminTags().length
   };
 }
 
@@ -190,7 +204,7 @@ export function getAdminDashboardSummary() {
     stats: getAdminStats(),
     recentPosts: listAdminPosts().items.slice(0, 4),
     categories: listAdminCategories().slice(0, 5),
-    tags: listAdminTags().slice(0, 8),
+    tags: collectAdminTags().slice(0, 8),
     commentStats: {
       total: comments.length,
       pending: comments.filter((comment) => comment.status === "pending").length
@@ -201,6 +215,23 @@ export function getAdminDashboardSummary() {
 export function getAdminSiteConfig() {
   return {
     config: formatAdminSiteConfig()
+  };
+}
+
+export function listAdminTags(filters = {}) {
+  const keyword = normalize(filters.q).toLowerCase();
+  const items = collectAdminTags().filter((tag) => {
+    if (!keyword) {
+      return true;
+    }
+
+    const searchTarget = [tag.name, ...tag.relatedPosts].join(" ").toLowerCase();
+    return searchTarget.includes(keyword);
+  });
+
+  return {
+    items,
+    total: items.length
   };
 }
 
@@ -496,6 +527,75 @@ export function updateAdminSiteConfig(input) {
 
   return {
     config: formatAdminSiteConfig()
+  };
+}
+
+export function renameAdminTag(currentName, nextName) {
+  const sourceName = normalize(currentName);
+  const targetName = normalize(nextName);
+
+  if (!sourceName) {
+    return {
+      error: "当前标签不能为空"
+    };
+  }
+
+  if (!targetName) {
+    return {
+      error: "新标签名称不能为空"
+    };
+  }
+
+  const relatedPosts = posts.filter((post) => post.tags.includes(sourceName));
+
+  if (!relatedPosts.length) {
+    return {
+      error: "标签不存在"
+    };
+  }
+
+  for (const post of relatedPosts) {
+    post.tags = [...new Set(post.tags.map((tag) => (tag === sourceName ? targetName : tag)))];
+    post.updatedAt = new Date().toISOString().slice(0, 10);
+  }
+
+  return {
+    tag: collectAdminTags().find((item) => item.name === targetName) ?? formatAdminTag(targetName, 0)
+  };
+}
+
+export function deleteAdminTag(name) {
+  const targetName = normalize(name);
+
+  if (!targetName) {
+    return {
+      error: "标签名称不能为空"
+    };
+  }
+
+  const relatedPosts = posts.filter((post) => post.tags.includes(targetName));
+
+  if (!relatedPosts.length) {
+    return {
+      error: "标签不存在"
+    };
+  }
+
+  if (relatedPosts.some((post) => post.tags.length === 1)) {
+    return {
+      error: "无法删除唯一标签，请先为相关文章补充其他标签"
+    };
+  }
+
+  for (const post of relatedPosts) {
+    post.tags = post.tags.filter((tag) => tag !== targetName);
+    post.updatedAt = new Date().toISOString().slice(0, 10);
+  }
+
+  return {
+    tag: {
+      name: targetName
+    }
   };
 }
 

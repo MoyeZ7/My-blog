@@ -2,13 +2,16 @@ import http from "node:http";
 import {
   createAdminPost,
   deleteAdminPost,
+  deleteAdminTag,
   getAdminSiteConfig,
   listAdminComments,
   getAdminPostBySlug,
   getAdminDashboardSummary,
   getAdminSession,
   listAdminPosts,
+  listAdminTags,
   loginAdmin,
+  renameAdminTag,
   updateAdminCommentStatus,
   updateAdminPost,
   updateAdminSiteConfig
@@ -309,6 +312,25 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && url.pathname === "/api/admin/tags") {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    sendJson(response, 200, {
+      session: {
+        username: session.username,
+        displayName: session.displayName
+      },
+      ...listAdminTags({
+        q: url.searchParams.get("q")
+      })
+    });
+    return;
+  }
+
   if (request.method === "GET" && url.pathname === "/api/admin/site-config") {
     const session = getAuthorizedAdminSession(request, response);
 
@@ -482,6 +504,80 @@ const server = http.createServer(async (request, response) => {
     }
 
     const result = updateAdminSiteConfig(payload);
+
+    if (result.error) {
+      sendJson(response, 400, {
+        message: result.error
+      });
+      return;
+    }
+
+    sendJson(response, 200, {
+      session: {
+        username: session.username,
+        displayName: session.displayName
+      },
+      ...result
+    });
+    return;
+  }
+
+  if (request.method === "PUT" && url.pathname === "/api/admin/tags") {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    let payload;
+
+    try {
+      payload = await readJsonBody(request);
+    } catch (error) {
+      sendJson(response, 400, {
+        message: "Invalid JSON body"
+      });
+      return;
+    }
+
+    const result = renameAdminTag(payload.currentName, payload.nextName);
+
+    if (result.error) {
+      sendJson(response, 400, {
+        message: result.error
+      });
+      return;
+    }
+
+    sendJson(response, 200, {
+      session: {
+        username: session.username,
+        displayName: session.displayName
+      },
+      ...result
+    });
+    return;
+  }
+
+  if (request.method === "DELETE" && url.pathname === "/api/admin/tags") {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    let payload;
+
+    try {
+      payload = await readJsonBody(request);
+    } catch (error) {
+      sendJson(response, 400, {
+        message: "Invalid JSON body"
+      });
+      return;
+    }
+
+    const result = deleteAdminTag(payload.name);
 
     if (result.error) {
       sendJson(response, 400, {
