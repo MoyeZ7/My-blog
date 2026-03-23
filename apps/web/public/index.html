@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Blog</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page-shell">
+    <div class="background-orb background-orb-left"></div>
+    <div class="background-orb background-orb-right"></div>
+    <header class="site-header">
+      <a class="brandmark" href="/">MY BLOG</a>
+      <p class="header-note">A fresh rebuild inspired by the original My Blog template.</p>
+    </header>
+
+    <main class="layout">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">From template to rebuild</p>
+          <h1>Editorial storytelling with a cleaner full-stack workflow.</h1>
+          <p class="hero-text">
+            This version starts from a lighter architecture, keeps the blog-centered product
+            shape, and leaves room for a separate admin flow.
+          </p>
+        </div>
+        <aside class="hero-panel">
+          <p class="panel-label">Current phase</p>
+          <h2>Public reading surface</h2>
+          <p>
+            The home page and article detail flow are online first. Admin tooling follows after
+            the reading experience stabilizes.
+          </p>
+        </aside>
+      </section>
+
+      <section class="content-grid">
+        <div class="main-column">
+          <div class="section-head">
+            <p class="eyebrow">Latest writing</p>
+            <h2>Featured posts</h2>
+          </div>
+          <div id="post-list" class="post-list"></div>
+        </div>
+
+        <aside class="side-column">
+          <div class="side-card">
+            <p class="eyebrow">Navigator</p>
+            <h2>Categories</h2>
+            <div id="category-list" class="category-list"></div>
+          </div>
+
+          <div class="side-card side-card-accent">
+            <p class="eyebrow">Next milestone</p>
+            <h2>Admin workflow</h2>
+            <p>
+              After the public surface is stable, the next slice will add a dashboard shell and
+              content management flow.
+            </p>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <template id="post-card-template">
+      <article class="post-card">
+        <img class="post-card-image" alt="" />
+        <div class="post-card-body">
+          <div class="post-meta">
+            <span data-role="category"></span>
+            <span data-role="date"></span>
+          </div>
+          <h3 data-role="title"></h3>
+          <p data-role="excerpt"></p>
+          <a class="text-link" data-role="link">Read article</a>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
