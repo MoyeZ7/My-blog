@@ -1,4 +1,5 @@
 import { posts } from "../../../packages/content/src/posts.js";
+import { comments } from "../../../packages/content/src/comments.js";
 
 function normalize(value) {
   return value?.trim().toLowerCase() ?? "";
@@ -117,4 +118,16 @@ export function getSiteStats() {
     categoryCount: listCategories().length,
     tagCount: listTags().length
   };
+}
+
+export function listApprovedCommentsByPostSlug(slug) {
+  return comments
+    .filter((comment) => comment.postSlug === slug && comment.status === "approved")
+    .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))
+    .map((comment) => ({
+      id: comment.id,
+      author: comment.author,
+      content: comment.content,
+      createdAt: comment.createdAt
+    }));
 }

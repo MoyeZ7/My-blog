@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { comments } from "../../../packages/content/src/comments.js";
 import { posts } from "../../../packages/content/src/posts.js";
 import { listPosts } from "./blog-service.js";
 
@@ -86,6 +87,25 @@ function formatAdminEditorPost(post) {
   };
 }
 
+function formatAdminComment(comment) {
+  const relatedPost = posts.find((post) => post.slug === comment.postSlug);
+  const statusMap = {
+    approved: "已通过",
+    pending: "待审核",
+    rejected: "已拒绝"
+  };
+
+  return {
+    id: comment.id,
+    postSlug: comment.postSlug,
+    postTitle: relatedPost?.title ?? "未知文章",
+    author: comment.author,
+    content: comment.content,
+    createdAt: comment.createdAt,
+    status: statusMap[comment.status] ?? "待审核"
+  };
+}
+
 function listAdminCategories() {
   const categoryMap = new Map();
 
@@ -152,7 +172,11 @@ export function getAdminDashboardSummary() {
     stats: getAdminStats(),
     recentPosts: listAdminPosts().items.slice(0, 4),
     categories: listAdminCategories().slice(0, 5),
-    tags: listAdminTags().slice(0, 8)
+    tags: listAdminTags().slice(0, 8),
+    commentStats: {
+      total: comments.length,
+      pending: comments.filter((comment) => comment.status === "pending").length
+    }
   };
 }
 
@@ -356,4 +380,64 @@ export function deleteAdminPost(slug) {
   return {
     post: formatAdminPost(removedPost)
   };
+}
+
+export function listAdminComments(filters = {}) {
+  const keyword = normalize(filters.q).toLowerCase();
+  const status = normalize(filters.status).toLowerCase();
+
+  const items = comments
+    .filter((comment) => {
+      if (status && comment.status !== status) {
+        return false;
+      }
+
+      if (!keyword) {
+        return true;
+      }
+
+      const relatedPost = posts.find((post) => post.slug === comment.postSlug);
+      const searchTarget = [
+        comment.author,
+        comment.content,
+        relatedPost?.title ?? "",
+        relatedPost?.category ?? ""
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return searchTarget.includes(keyword);
+    })
+    .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))
+    .map(formatAdminComment);
+
+  return {
+    items,
+    total: items.length
+  };
+}
+
+export function updateAdminCommentStatus(id, status) {
+  const normalizedStatus = normalizeStatusForComment(status);
+  const comment = comments.find((item) => item.id === Number(id));
+
+  if (!comment) {
+    return {
+      error: "评论不存在"
+    };
+  }
+
+  comment.status = normalizedStatus;
+
+  return {
+    comment: formatAdminComment(comment)
+  };
+}
+
+function normalizeStatusForComment(status) {
+  if (status === "approved" || status === "rejected") {
+    return status;
+  }
+
+  return "pending";
 }

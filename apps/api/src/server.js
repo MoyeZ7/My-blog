@@ -2,14 +2,23 @@ import http from "node:http";
 import {
   createAdminPost,
   deleteAdminPost,
+  listAdminComments,
   getAdminPostBySlug,
   getAdminDashboardSummary,
   getAdminSession,
   listAdminPosts,
   loginAdmin,
+  updateAdminCommentStatus,
   updateAdminPost
 } from "./admin-service.js";
-import { getPostBySlug, getSiteStats, listCategories, listPosts, listTags } from "./blog-service.js";
+import {
+  getPostBySlug,
+  getSiteStats,
+  listApprovedCommentsByPostSlug,
+  listCategories,
+  listPosts,
+  listTags
+} from "./blog-service.js";
 import { sendJson, sendNotFound } from "./response.js";
 
 const port = Number(process.env.PORT ?? 3001);
@@ -102,6 +111,14 @@ function handleGetRequest(pathname, searchParams, response) {
   }
 
   const postMatch = pathname.match(/^\/api\/posts\/([a-z0-9-]+)$/);
+  const commentMatch = pathname.match(/^\/api\/posts\/([a-z0-9-]+)\/comments$/);
+
+  if (commentMatch) {
+    sendJson(response, 200, {
+      items: listApprovedCommentsByPostSlug(commentMatch[1])
+    });
+    return;
+  }
 
   if (postMatch) {
     const post = getPostBySlug(postMatch[1]);
@@ -236,7 +253,28 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && url.pathname === "/api/admin/comments") {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    sendJson(response, 200, {
+      session: {
+        username: session.username,
+        displayName: session.displayName
+      },
+      ...listAdminComments({
+        q: url.searchParams.get("q"),
+        status: url.searchParams.get("status")
+      })
+    });
+    return;
+  }
+
   const adminPostMatch = url.pathname.match(/^\/api\/admin\/posts\/([a-z0-9-]+)$/);
+  const adminCommentMatch = url.pathname.match(/^\/api\/admin\/comments\/(\d+)$/);
 
   if (request.method === "GET" && adminPostMatch) {
     const session = getAuthorizedAdminSession(request, response);
@@ -317,6 +355,43 @@ const server = http.createServer(async (request, response) => {
     }
 
     const result = deleteAdminPost(adminPostMatch[1]);
+
+    if (result.error) {
+      sendJson(response, 400, {
+        message: result.error
+      });
+      return;
+    }
+
+    sendJson(response, 200, {
+      session: {
+        username: session.username,
+        displayName: session.displayName
+      },
+      ...result
+    });
+    return;
+  }
+
+  if (request.method === "PUT" && adminCommentMatch) {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    let payload;
+
+    try {
+      payload = await readJsonBody(request);
+    } catch (error) {
+      sendJson(response, 400, {
+        message: "Invalid JSON body"
+      });
+      return;
+    }
+
+    const result = updateAdminCommentStatus(adminCommentMatch[1], payload.status);
 
     if (result.error) {
       sendJson(response, 400, {
