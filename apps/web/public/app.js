@@ -23,6 +23,21 @@ async function fetchJson(path) {
   return response.json();
 }
 
+function renderSiteConfig(config) {
+  document.title = config.brandName;
+  document.querySelector("#site-brand").textContent = config.brandName;
+  document.querySelector("#site-header-note").textContent = config.headerNote;
+  document.querySelector("#hero-eyebrow").textContent = config.heroEyebrow;
+  document.querySelector("#hero-title").textContent = config.heroTitle;
+  document.querySelector("#hero-description").textContent = config.heroDescription;
+  document.querySelector("#panel-eyebrow").textContent = config.panelEyebrow;
+  document.querySelector("#panel-title").textContent = config.panelTitle;
+  document.querySelector("#panel-description").textContent = config.panelDescription;
+  document.querySelector("#feature-eyebrow").textContent = config.featureEyebrow;
+  document.querySelector("#feature-title").textContent = config.featureTitle;
+  document.querySelector("#feature-description").textContent = config.featureDescription;
+}
+
 function createFilterChip(label, onClick, variant = "") {
   const button = document.createElement("button");
   button.className = `filter-chip${variant ? ` ${variant}` : ""}`;
@@ -237,6 +252,11 @@ async function bootstrapSidebar() {
   renderStats(stats);
 }
 
+async function loadSiteConfig() {
+  const config = await fetchJson("/api/site-config");
+  renderSiteConfig(config);
+}
+
 function bindSearch() {
   const form = document.querySelector("#search-form");
   const input = document.querySelector("#search-input");
@@ -253,7 +273,7 @@ async function bootstrap() {
   bindSearch();
 
   try {
-    await Promise.all([bootstrapSidebar(), loadPosts()]);
+    await Promise.all([bootstrapSidebar(), loadPosts(), loadSiteConfig()]);
     renderActiveFilters();
   } catch (error) {
     renderMessage("页面已经加载，但当前无法连接到博客 API。");

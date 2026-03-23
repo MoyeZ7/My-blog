@@ -23,6 +23,10 @@ async function fetchPost(slug) {
   return fetchJson(`${apiOrigin}/api/posts/${encodeURIComponent(slug)}`);
 }
 
+async function fetchSiteConfig() {
+  return fetchJson(`${apiOrigin}/api/site-config`);
+}
+
 async function fetchComments(slug) {
   const data = await fetchJson(`${apiOrigin}/api/posts/${encodeURIComponent(slug)}/comments`);
   return data.items ?? [];
@@ -59,6 +63,11 @@ function setCommentMessage(message, isError = false) {
   const node = document.querySelector("#comment-message");
   node.textContent = message;
   node.classList.toggle("is-error", isError);
+}
+
+function renderSiteBrand(config) {
+  document.title = `${config.brandName} | 文章详情`;
+  document.querySelector("#site-brand").textContent = config.brandName;
 }
 
 function renderPost(post) {
@@ -174,8 +183,12 @@ async function bootstrap() {
   }
 
   try {
-    const post = await fetchPost(slug);
-    const comments = await fetchComments(slug);
+    const [post, comments, config] = await Promise.all([
+      fetchPost(slug),
+      fetchComments(slug),
+      fetchSiteConfig()
+    ]);
+    renderSiteBrand(config);
     renderPost(post);
     renderComments(comments);
     bindCommentForm(slug);
