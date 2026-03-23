@@ -72,6 +72,20 @@ function formatAdminPost(post) {
   };
 }
 
+function formatAdminEditorPost(post) {
+  return {
+    id: post.id,
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt,
+    category: post.category,
+    tags: post.tags.join(", "),
+    coverImage: post.coverImage,
+    content: post.content.join("\n"),
+    status: normalizeStatus(post.status)
+  };
+}
+
 function listAdminCategories() {
   const categoryMap = new Map();
 
@@ -175,6 +189,18 @@ export function listAdminPosts(filters = {}) {
   };
 }
 
+export function getAdminPostBySlug(slug) {
+  const post = posts.find((item) => item.slug === slug);
+
+  if (!post) {
+    return null;
+  }
+
+  return {
+    post: formatAdminEditorPost(post)
+  };
+}
+
 export function createAdminPost(input) {
   const title = normalize(input.title);
   const excerpt = normalize(input.excerpt);
@@ -240,6 +266,76 @@ export function createAdminPost(input) {
   };
 
   posts.unshift(post);
+
+  return {
+    post: formatAdminPost(post)
+  };
+}
+
+export function updateAdminPost(slug, input) {
+  const post = posts.find((item) => item.slug === slug);
+
+  if (!post) {
+    return {
+      error: "文章不存在"
+    };
+  }
+
+  const title = normalize(input.title);
+  const excerpt = normalize(input.excerpt);
+  const category = normalize(input.category);
+  const coverImage = normalize(input.coverImage) || defaultCoverImage;
+  const tags = parseTags(input.tags);
+  const content = parseContent(input.content);
+  const status = normalizeStatus(input.status);
+
+  if (!title) {
+    return {
+      error: "标题不能为空"
+    };
+  }
+
+  if (!excerpt) {
+    return {
+      error: "摘要不能为空"
+    };
+  }
+
+  if (!category) {
+    return {
+      error: "分类不能为空"
+    };
+  }
+
+  if (!tags.length) {
+    return {
+      error: "至少需要一个标签"
+    };
+  }
+
+  if (!content.length) {
+    return {
+      error: "正文不能为空"
+    };
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  post.title = title;
+  post.excerpt = excerpt;
+  post.category = category;
+  post.coverImage = coverImage;
+  post.tags = tags;
+  post.content = content;
+  post.status = status;
+  post.updatedAt = today;
+
+  if (status === "published" && !post.publishedAt) {
+    post.publishedAt = today;
+  }
+
+  if (status === "draft") {
+    post.publishedAt = null;
+  }
 
   return {
     post: formatAdminPost(post)

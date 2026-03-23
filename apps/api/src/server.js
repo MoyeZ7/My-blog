@@ -1,10 +1,13 @@
 import http from "node:http";
 import {
   createAdminPost,
+  getAdminPostBySlug,
   getAdminDashboardSummary,
   getAdminSession,
   listAdminPosts,
   loginAdmin
+  ,
+  updateAdminPost
 } from "./admin-service.js";
 import { getPostBySlug, getSiteStats, listCategories, listPosts, listTags } from "./blog-service.js";
 import { sendJson, sendNotFound } from "./response.js";
@@ -188,7 +191,7 @@ const server = http.createServer(async (request, response) => {
   if (request.method === "OPTIONS") {
     response.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+      "Access-Control-Allow-Methods": "GET,POST,PUT,OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type,Authorization"
     });
     response.end();
@@ -233,6 +236,32 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  const adminPostMatch = url.pathname.match(/^\/api\/admin\/posts\/([a-z0-9-]+)$/);
+
+  if (request.method === "GET" && adminPostMatch) {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    const result = getAdminPostBySlug(adminPostMatch[1]);
+
+    if (!result) {
+      sendNotFound(response);
+      return;
+    }
+
+    sendJson(response, 200, {
+      session: {
+        username: session.username,
+        displayName: session.displayName
+      },
+      ...result
+    });
+    return;
+  }
+
   if (request.method === "GET") {
     handleGetRequest(url.pathname, url.searchParams, response);
     return;
@@ -243,7 +272,44 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
-  if (request.method !== "GET" && request.method !== "POST") {
+  if (request.method === "PUT" && adminPostMatch) {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    let payload;
+
+    try {
+      payload = await readJsonBody(request);
+    } catch (error) {
+      sendJson(response, 400, {
+        message: "Invalid JSON body"
+      });
+      return;
+    }
+
+    const result = updateAdminPost(adminPostMatch[1], payload);
+
+    if (result.error) {
+      sendJson(response, 400, {
+        message: result.error
+      });
+      return;
+    }
+
+    sendJson(response, 200, {
+      session: {
+        username: session.username,
+        displayName: session.displayName
+      },
+      ...result
+    });
+    return;
+  }
+
+  if (request.method !== "GET" && request.method !== "POST" && request.method !== "PUT") {
     sendJson(response, 405, {
       message: "Method not allowed"
     });
