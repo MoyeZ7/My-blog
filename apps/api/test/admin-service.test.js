@@ -4,10 +4,12 @@ import { posts } from "../../../packages/content/src/posts.js";
 import { getSiteStats, listPosts } from "../src/blog-service.js";
 import {
   createAdminPost,
+  getAdminPostBySlug,
   getAdminDashboardSummary,
   getAdminSession,
   listAdminPosts,
-  loginAdmin
+  loginAdmin,
+  updateAdminPost
 } from "../src/admin-service.js";
 
 test("loginAdmin creates a reusable session for valid credentials", () => {
@@ -79,4 +81,36 @@ test("createAdminPost validates fields and stores draft or published posts", () 
 
   posts.splice(0, 1);
   assert.equal(posts.length, beforeCount);
+});
+
+test("getAdminPostBySlug returns editable post detail and updateAdminPost can change status", () => {
+  const createResult = createAdminPost({
+    title: "后台编辑流程测试文章",
+    excerpt: "用于验证后台编辑流程。",
+    category: "编辑",
+    tags: "编辑, 后台",
+    content: "初始正文",
+    status: "draft"
+  });
+
+  assert.ok(createResult.post);
+
+  const detail = getAdminPostBySlug(createResult.post.slug);
+  assert.equal(detail?.post.title, "后台编辑流程测试文章");
+  assert.equal(detail?.post.status, "draft");
+
+  const updateResult = updateAdminPost(createResult.post.slug, {
+    title: "后台编辑流程测试文章已更新",
+    excerpt: "更新后的摘要。",
+    category: "编辑",
+    tags: "编辑, 发布",
+    content: "更新后的正文",
+    status: "published"
+  });
+
+  assert.ok(updateResult.post);
+  assert.equal(updateResult.post?.status, "已发布");
+  assert.equal(listPosts({ category: "编辑" }).length, 1);
+
+  posts.splice(0, 1);
 });
