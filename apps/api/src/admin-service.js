@@ -341,3 +341,19 @@ export function updateAdminPost(slug, input) {
     post: formatAdminPost(post)
   };
 }
+
+export function deleteAdminPost(slug) {
+  const index = posts.findIndex((item) => item.slug === slug);
+
+  if (index === -1) {
+    return {
+      error: "文章不存在"
+    };
+  }
+
+  const [removedPost] = posts.splice(index, 1);
+
+  return {
+    post: formatAdminPost(removedPost)
+  };
+}
