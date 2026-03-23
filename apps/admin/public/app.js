@@ -2,7 +2,8 @@ const apiOrigin = window.localStorage.getItem("my-blog-api-origin") ?? "http://l
 const tokenKey = "my-blog-admin-token";
 const adminState = {
   q: "",
-  category: ""
+  category: "",
+  editingSlug: null
 };
 
 function getStoredToken() {
@@ -38,6 +39,15 @@ function setCreatePostMessage(message, isError = false) {
   const node = document.querySelector("#create-post-message");
   node.textContent = message;
   node.classList.toggle("is-error", isError);
+}
+
+function setEditorMode(isEditing) {
+  document.querySelector("#editor-mode-label").textContent = isEditing ? "内容编辑" : "内容创建";
+  document.querySelector("#editor-title").textContent = isEditing ? "编辑文章" : "新建文章";
+  document.querySelector("#cancel-edit-button").classList.toggle("is-hidden", !isEditing);
+  document.querySelector("#create-post-form button[type='submit']").textContent = isEditing
+    ? "保存更新"
+    : "保存文章";
 }
 
 function showDashboard() {
@@ -127,6 +137,8 @@ function renderPostCategoryOptions(items) {
 function resetCreatePostForm() {
   document.querySelector("#create-post-form").reset();
   document.querySelector("#create-status-select").value = "published";
+  adminState.editingSlug = null;
+  setEditorMode(false);
 }
 
 function renderAdminPosts(items, total) {
@@ -150,6 +162,7 @@ function renderAdminPosts(items, total) {
       fragment.querySelector('[data-role="category"]').textContent = item.category;
       fragment.querySelector('[data-role="status"]').textContent = item.status;
       fragment.querySelector('[data-role="date"]').textContent = item.updatedAt;
+      fragment.querySelector('[data-role="edit"]').dataset.slug = item.slug;
       return fragment;
     })
   );
@@ -214,6 +227,35 @@ async function loadAdminPosts() {
   renderAdminPosts(data.items, data.total);
 }
 
+async function loadAdminPostDetail(slug) {
+  const token = getStoredToken();
+
+  if (!token) {
+    return;
+  }
+
+  const data = await fetchJson(`/api/admin/posts/${encodeURIComponent(slug)}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  adminState.editingSlug = data.post.slug;
+  document.querySelector("#create-title-input").value = data.post.title;
+  document.querySelector("#create-category-input").value = data.post.category;
+  document.querySelector("#create-status-select").value = data.post.status;
+  document.querySelector("#create-excerpt-input").value = data.post.excerpt;
+  document.querySelector("#create-tags-input").value = data.post.tags;
+  document.querySelector("#create-cover-input").value = data.post.coverImage;
+  document.querySelector("#create-content-input").value = data.post.content;
+  setCreatePostMessage(`正在编辑：${data.post.title}`);
+  setEditorMode(true);
+  document.querySelector("#create-post-form").scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
 function bindLoginForm() {
   document.querySelector("#login-form").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -257,6 +299,32 @@ function bindPostFilters() {
   });
 }
 
+function bindPostActions() {
+  document.querySelector("#post-admin-list").addEventListener("click", async (event) => {
+    const target = event.target;
+
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    if (target.dataset.role !== "edit") {
+      return;
+    }
+
+    const slug = target.dataset.slug;
+
+    if (!slug) {
+      return;
+    }
+
+    try {
+      await loadAdminPostDetail(slug);
+    } catch (error) {
+      setCreatePostMessage(error.message, true);
+    }
+  });
+}
+
 function bindCreatePostForm() {
   document.querySelector("#create-post-form").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -279,16 +347,22 @@ function bindCreatePostForm() {
     };
 
     try {
-      const result = await fetchJson("/api/admin/posts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const isEditing = Boolean(adminState.editingSlug);
+      const result = await fetchJson(
+        isEditing ? `/api/admin/posts/${encodeURIComponent(adminState.editingSlug)}` : "/api/admin/posts",
+        {
+          method: isEditing ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        }
+      );
 
-      setCreatePostMessage(`已创建文章：${result.post.title}`);
+      setCreatePostMessage(
+        isEditing ? `已更新文章：${result.post.title}` : `已创建文章：${result.post.title}`
+      );
       resetCreatePostForm();
       await loadDashboard();
       await loadAdminPosts();
@@ -298,9 +372,20 @@ function bindCreatePostForm() {
   });
 }
 
+function bindEditorControls() {
+  document.querySelector("#cancel-edit-button").addEventListener("click", () => {
+    setCreatePostMessage("");
+    resetCreatePostForm();
+  });
+}
+
 bindLoginForm();
 bindLogout();
 bindPostFilters();
+bindPostActions();
 bindCreatePostForm();
+bindEditorControls();
+
+setEditorMode(false);
 
 loadDashboard().then(loadAdminPosts);
