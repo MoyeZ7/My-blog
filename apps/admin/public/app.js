@@ -5,7 +5,8 @@ const adminState = {
   category: "",
   editingSlug: null,
   commentQuery: "",
-  commentStatus: ""
+  commentStatus: "",
+  tagQuery: ""
 };
 
 function getStoredToken() {
@@ -45,6 +46,12 @@ function setCreatePostMessage(message, isError = false) {
 
 function setSiteConfigMessage(message, isError = false) {
   const node = document.querySelector("#site-config-message");
+  node.textContent = message;
+  node.classList.toggle("is-error", isError);
+}
+
+function setTagMessage(message, isError = false) {
+  const node = document.querySelector("#tag-message");
   node.textContent = message;
   node.classList.toggle("is-error", isError);
 }
@@ -204,6 +211,32 @@ function renderAdminComments(items, total) {
   );
 }
 
+function renderAdminTags(items, total) {
+  const root = document.querySelector("#tag-admin-list");
+  const template = document.querySelector("#tag-row-template");
+  document.querySelector("#tag-list-summary").textContent = `共 ${total} 个标签`;
+
+  if (!items.length) {
+    const empty = document.createElement("p");
+    empty.className = "muted-text";
+    empty.textContent = "当前筛选条件下没有标签。";
+    root.replaceChildren(empty);
+    return;
+  }
+
+  root.replaceChildren(
+    ...items.map((item) => {
+      const fragment = template.content.cloneNode(true);
+      fragment.querySelector('[data-role="name"]').textContent = item.name;
+      fragment.querySelector('[data-role="count"]').textContent = `${item.postCount} 篇文章`;
+      fragment.querySelector('[data-role="related-posts"]').textContent = item.relatedPosts.join(" / ");
+      fragment.querySelector('[data-role="rename"]').dataset.name = item.name;
+      fragment.querySelector('[data-role="delete"]').dataset.name = item.name;
+      return fragment;
+    })
+  );
+}
+
 function createPostQuery() {
   const params = new URLSearchParams();
 
@@ -228,6 +261,17 @@ function createCommentQuery() {
 
   if (adminState.commentStatus) {
     params.set("status", adminState.commentStatus);
+  }
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
+function createTagQuery() {
+  const params = new URLSearchParams();
+
+  if (adminState.tagQuery) {
+    params.set("q", adminState.tagQuery);
   }
 
   const query = params.toString();
@@ -350,6 +394,22 @@ async function loadAdminSiteConfig() {
   document.querySelector("#site-config-summary").textContent = `最近更新：${data.config.updatedAt}`;
 }
 
+async function loadAdminTags() {
+  const token = getStoredToken();
+
+  if (!token) {
+    return;
+  }
+
+  const data = await fetchJson(`/api/admin/tags${createTagQuery()}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  renderAdminTags(data.items, data.total);
+}
+
 function bindLoginForm() {
   document.querySelector("#login-form").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -372,6 +432,7 @@ function bindLoginForm() {
       await loadAdminPosts();
       await loadAdminComments();
       await loadAdminSiteConfig();
+      await loadAdminTags();
     } catch (error) {
       setMessage(error.message, true);
     }
@@ -401,6 +462,14 @@ function bindCommentFilters() {
     adminState.commentQuery = document.querySelector("#comment-search-input").value.trim();
     adminState.commentStatus = document.querySelector("#comment-status-select").value;
     await loadAdminComments();
+  });
+}
+
+function bindTagFilters() {
+  document.querySelector("#tag-filter-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    adminState.tagQuery = document.querySelector("#tag-search-input").value.trim();
+    await loadAdminTags();
   });
 }
 
@@ -465,6 +534,7 @@ function bindPostActions() {
       setCreatePostMessage(`已删除文章：${result.post.title}`);
       await loadDashboard();
       await loadAdminPosts();
+      await loadAdminTags();
     } catch (error) {
       setCreatePostMessage(error.message, true);
     }
@@ -513,6 +583,7 @@ function bindCreatePostForm() {
       await loadDashboard();
       await loadAdminPosts();
       await loadAdminComments();
+      await loadAdminTags();
     } catch (error) {
       setCreatePostMessage(error.message, true);
     }
@@ -618,15 +689,118 @@ function bindSiteConfigForm() {
   });
 }
 
+function bindTagRenameForm() {
+  document.querySelector("#tag-rename-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const token = getStoredToken();
+
+    if (!token) {
+      setTagMessage("请先登录后台。", true);
+      return;
+    }
+
+    const currentName = document.querySelector("#tag-current-name-input").value.trim();
+    const nextName = document.querySelector("#tag-next-name-input").value.trim();
+
+    try {
+      const result = await fetchJson("/api/admin/tags", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ currentName, nextName })
+      });
+
+      document.querySelector("#tag-current-name-input").value = result.tag.name;
+      document.querySelector("#tag-next-name-input").value = "";
+      setTagMessage(`标签已重命名为：${result.tag.name}`);
+      await loadDashboard();
+      await loadAdminTags();
+    } catch (error) {
+      setTagMessage(error.message, true);
+    }
+  });
+}
+
+function bindTagActions() {
+  document.querySelector("#tag-admin-list").addEventListener("click", async (event) => {
+    const target = event.target;
+
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const action = target.dataset.role;
+    const name = target.dataset.name;
+
+    if (!name) {
+      return;
+    }
+
+    if (action === "rename") {
+      document.querySelector("#tag-current-name-input").value = name;
+      document.querySelector("#tag-next-name-input").value = name;
+      setTagMessage(`正在准备重命名标签：${name}`);
+      document.querySelector("#tag-next-name-input").focus();
+      document.querySelector("#tag-next-name-input").select();
+      return;
+    }
+
+    if (action !== "delete") {
+      return;
+    }
+
+    const token = getStoredToken();
+
+    if (!token) {
+      setTagMessage("请先登录后台。", true);
+      return;
+    }
+
+    try {
+      const shouldDelete = window.confirm(`确认删除标签“${name}”吗？`);
+
+      if (!shouldDelete) {
+        return;
+      }
+
+      const result = await fetchJson("/api/admin/tags", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ name })
+      });
+
+      if (document.querySelector("#tag-current-name-input").value.trim() === name) {
+        document.querySelector("#tag-current-name-input").value = "";
+        document.querySelector("#tag-next-name-input").value = "";
+      }
+
+      setTagMessage(`标签已删除：${result.tag.name}`);
+      await loadDashboard();
+      await loadAdminTags();
+    } catch (error) {
+      setTagMessage(error.message, true);
+    }
+  });
+}
+
 bindLoginForm();
 bindLogout();
 bindPostFilters();
 bindCommentFilters();
+bindTagFilters();
 bindPostActions();
 bindCreatePostForm();
 bindEditorControls();
 bindCommentActions();
 bindSiteConfigForm();
+bindTagRenameForm();
+bindTagActions();
 
 setEditorMode(false);
 
@@ -634,4 +808,5 @@ loadDashboard().then(async () => {
   await loadAdminPosts();
   await loadAdminComments();
   await loadAdminSiteConfig();
+  await loadAdminTags();
 });
