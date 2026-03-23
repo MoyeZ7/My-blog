@@ -1,9 +1,11 @@
 import http from "node:http";
 import {
   createAdminPost,
+  deleteAdminCategory,
   deleteAdminPost,
   deleteAdminTag,
   getAdminSiteConfig,
+  listAdminCategories,
   listAdminComments,
   getAdminPostBySlug,
   getAdminDashboardSummary,
@@ -11,6 +13,7 @@ import {
   listAdminPosts,
   listAdminTags,
   loginAdmin,
+  renameAdminCategory,
   renameAdminTag,
   updateAdminCommentStatus,
   updateAdminPost,
@@ -312,6 +315,25 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && url.pathname === "/api/admin/categories") {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    sendJson(response, 200, {
+      session: {
+        username: session.username,
+        displayName: session.displayName
+      },
+      ...listAdminCategories({
+        q: url.searchParams.get("q")
+      })
+    });
+    return;
+  }
+
   if (request.method === "GET" && url.pathname === "/api/admin/tags") {
     const session = getAuthorizedAdminSession(request, response);
 
@@ -522,6 +544,43 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "PUT" && url.pathname === "/api/admin/categories") {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    let payload;
+
+    try {
+      payload = await readJsonBody(request);
+    } catch (error) {
+      sendJson(response, 400, {
+        message: "Invalid JSON body"
+      });
+      return;
+    }
+
+    const result = renameAdminCategory(payload.currentName, payload.nextName);
+
+    if (result.error) {
+      sendJson(response, 400, {
+        message: result.error
+      });
+      return;
+    }
+
+    sendJson(response, 200, {
+      session: {
+        username: session.username,
+        displayName: session.displayName
+      },
+      ...result
+    });
+    return;
+  }
+
   if (request.method === "PUT" && url.pathname === "/api/admin/tags") {
     const session = getAuthorizedAdminSession(request, response);
 
@@ -578,6 +637,43 @@ const server = http.createServer(async (request, response) => {
     }
 
     const result = deleteAdminTag(payload.name);
+
+    if (result.error) {
+      sendJson(response, 400, {
+        message: result.error
+      });
+      return;
+    }
+
+    sendJson(response, 200, {
+      session: {
+        username: session.username,
+        displayName: session.displayName
+      },
+      ...result
+    });
+    return;
+  }
+
+  if (request.method === "DELETE" && url.pathname === "/api/admin/categories") {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    let payload;
+
+    try {
+      payload = await readJsonBody(request);
+    } catch (error) {
+      sendJson(response, 400, {
+        message: "Invalid JSON body"
+      });
+      return;
+    }
+
+    const result = deleteAdminCategory(payload.name, payload.replacementName);
 
     if (result.error) {
       sendJson(response, 400, {

@@ -138,7 +138,21 @@ function formatAdminTag(name, count) {
   };
 }
 
-function listAdminCategories() {
+function formatAdminCategory(name, count) {
+  const relatedPosts = posts
+    .filter((post) => post.category === name)
+    .map((post) => post.title)
+    .slice(0, 3);
+
+  return {
+    name,
+    count,
+    postCount: count,
+    relatedPosts
+  };
+}
+
+function collectAdminCategories() {
   const categoryMap = new Map();
 
   for (const post of posts) {
@@ -147,7 +161,7 @@ function listAdminCategories() {
   }
 
   return [...categoryMap.entries()]
-    .map(([name, count]) => ({ name, count }))
+    .map(([name, count]) => formatAdminCategory(name, count))
     .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name, "zh-Hans-CN"));
 }
 
@@ -169,7 +183,7 @@ function collectAdminTags() {
 function getAdminStats() {
   return {
     postCount: posts.length,
-    categoryCount: listAdminCategories().length,
+    categoryCount: collectAdminCategories().length,
     tagCount: collectAdminTags().length
   };
 }
@@ -203,7 +217,7 @@ export function getAdminDashboardSummary() {
   return {
     stats: getAdminStats(),
     recentPosts: listAdminPosts().items.slice(0, 4),
-    categories: listAdminCategories().slice(0, 5),
+    categories: collectAdminCategories().slice(0, 5),
     tags: collectAdminTags().slice(0, 8),
     commentStats: {
       total: comments.length,
@@ -215,6 +229,23 @@ export function getAdminDashboardSummary() {
 export function getAdminSiteConfig() {
   return {
     config: formatAdminSiteConfig()
+  };
+}
+
+export function listAdminCategories(filters = {}) {
+  const keyword = normalize(filters.q).toLowerCase();
+  const items = collectAdminCategories().filter((category) => {
+    if (!keyword) {
+      return true;
+    }
+
+    const searchTarget = [category.name, ...category.relatedPosts].join(" ").toLowerCase();
+    return searchTarget.includes(keyword);
+  });
+
+  return {
+    items,
+    total: items.length
   };
 }
 
@@ -527,6 +558,89 @@ export function updateAdminSiteConfig(input) {
 
   return {
     config: formatAdminSiteConfig()
+  };
+}
+
+export function renameAdminCategory(currentName, nextName) {
+  const sourceName = normalize(currentName);
+  const targetName = normalize(nextName);
+
+  if (!sourceName) {
+    return {
+      error: "当前分类不能为空"
+    };
+  }
+
+  if (!targetName) {
+    return {
+      error: "新分类名称不能为空"
+    };
+  }
+
+  const relatedPosts = posts.filter((post) => post.category === sourceName);
+
+  if (!relatedPosts.length) {
+    return {
+      error: "分类不存在"
+    };
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  for (const post of relatedPosts) {
+    post.category = targetName;
+    post.updatedAt = today;
+  }
+
+  return {
+    category: collectAdminCategories().find((item) => item.name === targetName)
+      ?? formatAdminCategory(targetName, relatedPosts.length)
+  };
+}
+
+export function deleteAdminCategory(name, replacementName) {
+  const sourceName = normalize(name);
+  const targetName = normalize(replacementName);
+
+  if (!sourceName) {
+    return {
+      error: "分类名称不能为空"
+    };
+  }
+
+  const relatedPosts = posts.filter((post) => post.category === sourceName);
+
+  if (!relatedPosts.length) {
+    return {
+      error: "分类不存在"
+    };
+  }
+
+  if (!targetName) {
+    return {
+      error: "删除分类时需要提供迁移分类"
+    };
+  }
+
+  if (targetName === sourceName) {
+    return {
+      error: "迁移分类不能与当前分类相同"
+    };
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  for (const post of relatedPosts) {
+    post.category = targetName;
+    post.updatedAt = today;
+  }
+
+  return {
+    category: {
+      name: sourceName,
+      replacementName: targetName,
+      movedPostCount: relatedPosts.length
+    }
   };
 }
 
