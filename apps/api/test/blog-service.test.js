@@ -1,8 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { comments } from "../../../packages/content/src/comments.js";
 import {
+  createPublicComment,
   getPostBySlug,
   getSiteStats,
+  listApprovedCommentsByPostSlug,
   listCategories,
   listPosts,
   listTags
@@ -63,4 +66,33 @@ test("listTags and site stats summarize content", () => {
     categoryCount: 3,
     tagCount: 12
   });
+});
+
+test("createPublicComment validates fields and keeps new comments pending by default", () => {
+  const beforeCount = comments.length;
+  const missingPostResult = createPublicComment("missing-post", {
+    author: "新读者",
+    content: "这里不会成功。"
+  });
+  const invalidResult = createPublicComment("designing-a-blog-from-first-principles", {
+    author: "",
+    content: ""
+  });
+
+  assert.equal(missingPostResult.error, "文章不存在");
+  assert.equal(invalidResult.error, "请填写称呼");
+
+  const createResult = createPublicComment("designing-a-blog-from-first-principles", {
+    author: "新读者",
+    content: "期待看到后续的数据层拆分。"
+  });
+
+  assert.equal(createResult.message, "评论已提交，审核通过后展示。");
+  assert.equal(createResult.comment.status, "待审核");
+  assert.equal(comments.length, beforeCount + 1);
+  assert.equal(comments[0].status, "pending");
+  assert.equal(listApprovedCommentsByPostSlug("designing-a-blog-from-first-principles").length, 0);
+
+  comments.splice(0, 1);
+  assert.equal(comments.length, beforeCount);
 });
