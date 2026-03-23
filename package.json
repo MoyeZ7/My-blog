@@ -11,6 +11,8 @@
     "dev:api": "npm run dev --workspace @my-blog/api",
     "start:api": "npm run start --workspace @my-blog/api",
     "test:api": "npm run test --workspace @my-blog/api",
+    "dev:admin": "npm run dev --workspace @my-blog/admin",
+    "start:admin": "npm run start --workspace @my-blog/admin",
     "dev:web": "npm run dev --workspace @my-blog/web",
     "start:web": "npm run start --workspace @my-blog/web"
   }

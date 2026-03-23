@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Blog Admin</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="admin-shell">
+    <main class="admin-layout">
+      <section id="login-view" class="panel panel-login">
+        <div class="panel-copy">
+          <p class="eyebrow">后台入口</p>
+          <h1>登录后台管理台</h1>
+          <p>
+            当前阶段先交付最小可用的管理端，用来验证登录流程、摘要数据和后续内容操作入口。
+          </p>
+        </div>
+
+        <form id="login-form" class="login-form">
+          <label class="field">
+            <span>账号</span>
+            <input id="username-input" name="username" value="admin" autocomplete="username" />
+          </label>
+
+          <label class="field">
+            <span>密码</span>
+            <input
+              id="password-input"
+              name="password"
+              type="password"
+              value="123456"
+              autocomplete="current-password"
+            />
+          </label>
+
+          <button class="primary-button" type="submit">登录后台</button>
+          <p id="login-message" class="form-message"></p>
+        </form>
+      </section>
+
+      <section id="dashboard-view" class="dashboard is-hidden">
+        <header class="dashboard-header">
+          <div>
+            <p class="eyebrow">控制台</p>
+            <h1>内容管理概览</h1>
+            <p id="session-note" class="muted-text"></p>
+          </div>
+          <button id="logout-button" class="secondary-button" type="button">退出登录</button>
+        </header>
+
+        <section id="stats-grid" class="stats-grid"></section>
+
+        <section class="dashboard-grid">
+          <article class="panel">
+            <div class="section-head">
+              <p class="eyebrow">最近文章</p>
+              <h2>最新内容</h2>
+            </div>
+            <div id="recent-posts" class="list-block"></div>
+          </article>
+
+          <article class="panel">
+            <div class="section-head">
+              <p class="eyebrow">分类统计</p>
+              <h2>内容结构</h2>
+            </div>
+            <div id="category-stats" class="list-block"></div>
+          </article>
+
+          <article class="panel panel-wide">
+            <div class="section-head">
+              <p class="eyebrow">标签分布</p>
+              <h2>内容关键词</h2>
+            </div>
+            <div id="tag-list" class="tag-list"></div>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <template id="stat-card-template">
+      <article class="stat-card">
+        <span data-role="label"></span>
+        <strong data-role="value"></strong>
+      </article>
+    </template>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
