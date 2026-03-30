@@ -1,6 +1,10 @@
 const apiOrigin = window.localStorage.getItem("my-blog-api-origin") ?? "http://localhost:3001";
 const state = {
+  archive: "",
+  archiveLabel: "",
   category: "",
+  page: 1,
+  pageSize: 3,
   tag: "",
   q: ""
 };
@@ -52,6 +56,7 @@ function renderCategories(items) {
 
   root.replaceChildren(
     createFilterChip("全部文章", () => {
+      state.page = 1;
       state.category = "";
       loadPosts();
       renderActiveFilters();
@@ -62,6 +67,7 @@ function renderCategories(items) {
       return createFilterChip(
         `${item.name} (${item.count})`,
         () => {
+          state.page = 1;
           state.category = item.name;
           loadPosts();
           renderActiveFilters();
@@ -74,6 +80,35 @@ function renderCategories(items) {
   );
 }
 
+function renderArchives(items) {
+  const root = document.querySelector("#archive-list");
+
+  root.replaceChildren(
+    createFilterChip("全部时间", () => {
+      state.archive = "";
+      state.archiveLabel = "";
+      state.page = 1;
+      loadPosts();
+      renderActiveFilters();
+      renderArchives(items);
+    }, !state.archive ? "is-active" : ""),
+    ...items.map((item) =>
+      createFilterChip(
+        `${item.label} (${item.count})`,
+        () => {
+          state.archive = item.key;
+          state.archiveLabel = item.label;
+          state.page = 1;
+          loadPosts();
+          renderActiveFilters();
+          renderArchives(items);
+        },
+        state.archive === item.key ? "is-active" : ""
+      )
+    )
+  );
+}
+
 function renderTags(items) {
   const root = document.querySelector("#tag-list");
 
@@ -82,6 +117,7 @@ function renderTags(items) {
       createFilterChip(
         `# ${item.name}`,
         () => {
+          state.page = 1;
           state.tag = state.tag === item.name ? "" : item.name;
           loadPosts();
           renderActiveFilters();
@@ -135,6 +171,10 @@ function renderActiveFilters() {
     items.push(`标签: ${state.tag}`);
   }
 
+  if (state.archive) {
+    items.push(`归档: ${state.archiveLabel || state.archive}`);
+  }
+
   if (!items.length) {
     root.replaceChildren();
     return;
@@ -145,8 +185,11 @@ function renderActiveFilters() {
   summary.textContent = items.join(" / ");
 
   const clearButton = createFilterChip("清空筛选", () => {
+    state.archive = "";
+    state.archiveLabel = "";
     state.q = "";
     state.category = "";
+    state.page = 1;
     state.tag = "";
     document.querySelector("#search-input").value = "";
     loadPosts();
@@ -155,6 +198,22 @@ function renderActiveFilters() {
   });
 
   root.replaceChildren(summary, clearButton);
+}
+
+function renderFeedSummary(pagination) {
+  const root = document.querySelector("#feed-summary");
+
+  if (!pagination) {
+    root.textContent = "";
+    return;
+  }
+
+  if (pagination.totalItems === 0) {
+    root.textContent = "当前筛选下还没有文章，可以换一个主题、标签或归档再试。";
+    return;
+  }
+
+  root.textContent = `共 ${pagination.totalItems} 篇文章，当前第 ${pagination.page} / ${pagination.totalPages} 页。`;
 }
 
 function renderPosts(items) {
@@ -189,6 +248,7 @@ function renderPosts(items) {
       tags.replaceChildren(
         ...item.tags.map((tagName) =>
           createFilterChip(`# ${tagName}`, () => {
+            state.page = 1;
             state.tag = tagName;
             loadPosts();
             renderActiveFilters();
@@ -210,11 +270,56 @@ function renderMessage(message) {
   list.replaceChildren(card);
 }
 
+function createPagerButton(label, onClick, disabled = false) {
+  const button = document.createElement("button");
+  button.className = "page-button";
+  button.type = "button";
+  button.textContent = label;
+  button.disabled = disabled;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+function renderPagination(pagination) {
+  const root = document.querySelector("#pagination");
+
+  if (!pagination || pagination.totalItems === 0) {
+    root.replaceChildren();
+    return;
+  }
+
+  const meta = document.createElement("p");
+  meta.className = "pagination-meta";
+  meta.textContent = `每页 ${pagination.pageSize} 篇，本页显示第 ${pagination.page} 页。`;
+
+  const actions = document.createElement("div");
+  actions.className = "pagination-actions";
+  actions.append(
+    createPagerButton("上一页", () => {
+      state.page = Math.max(1, pagination.page - 1);
+      loadPosts();
+    }, !pagination.hasPreviousPage),
+    createPagerButton("下一页", () => {
+      state.page = pagination.page + 1;
+      loadPosts();
+    }, !pagination.hasNextPage)
+  );
+
+  root.replaceChildren(meta, actions);
+}
+
 function createPostQuery() {
   const params = new URLSearchParams();
 
+  params.set("page", String(state.page));
+  params.set("pageSize", String(state.pageSize));
+
   if (state.category) {
     params.set("category", state.category);
+  }
+
+  if (state.archive) {
+    params.set("archive", state.archive);
   }
 
   if (state.tag) {
@@ -234,20 +339,27 @@ async function loadPosts() {
 
   try {
     const data = await fetchJson(`/api/posts${search}`);
+    state.page = data.pagination?.page ?? 1;
+    renderFeedSummary(data.pagination);
     renderPosts(data.items);
+    renderPagination(data.pagination);
   } catch (error) {
+    renderFeedSummary();
     renderMessage("文章暂时无法加载，请先启动 API 服务后再刷新页面。");
+    renderPagination();
   }
 }
 
 async function bootstrapSidebar() {
-  const [categories, tags, stats] = await Promise.all([
+  const [categories, archives, tags, stats] = await Promise.all([
     fetchJson("/api/categories"),
+    fetchJson("/api/archives"),
     fetchJson("/api/tags"),
     fetchJson("/api/stats")
   ]);
 
   renderCategories(categories.items);
+  renderArchives(archives.items);
   renderTags(tags.items);
   renderStats(stats);
 }
@@ -263,6 +375,7 @@ function bindSearch() {
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    state.page = 1;
     state.q = input.value.trim();
     loadPosts();
     renderActiveFilters();
