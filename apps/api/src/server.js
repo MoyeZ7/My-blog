@@ -24,10 +24,11 @@ import {
   createPublicComment,
   getPublicSiteConfig,
   getPostBySlug,
+  listArchives,
+  listPaginatedPosts,
   getSiteStats,
   listApprovedCommentsByPostSlug,
   listCategories,
-  listPosts,
   listTags
 } from "./blog-service.js";
 import {
@@ -117,12 +118,20 @@ function handleGetRequest(pathname, searchParams, response) {
   }
 
   if (pathname === "/api/posts") {
-    sendJson(response, 200, {
-      items: listPosts({
+    sendJson(response, 200, listPaginatedPosts({
         category: searchParams.get("category"),
+        archive: searchParams.get("archive"),
+        page: searchParams.get("page"),
+        pageSize: searchParams.get("pageSize"),
         q: searchParams.get("q"),
         tag: searchParams.get("tag")
-      })
+      }));
+    return;
+  }
+
+  if (pathname === "/api/archives") {
+    sendJson(response, 200, {
+      items: listArchives()
     });
     return;
   }

@@ -5,6 +5,16 @@ function normalize(value) {
   return value?.trim().toLowerCase() ?? "";
 }
 
+function normalizePositiveInteger(value, fallback) {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+
+  if (Number.isNaN(parsed) || parsed < 1) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
 function getPostStatus(post) {
   return post.status ?? "published";
 }
@@ -17,6 +27,10 @@ function sortByPublishedDate(items) {
   return [...items].sort((left, right) => {
     return new Date(right.publishedAt) - new Date(left.publishedAt);
   });
+}
+
+function getArchiveKey(post) {
+  return String(post.publishedAt).slice(0, 7);
 }
 
 function estimateReadingTime(content) {
@@ -64,17 +78,22 @@ function formatPublicSiteConfig() {
   };
 }
 
-export function listPosts(filters = {}) {
+function getFilteredPublishedPosts(filters = {}) {
   const category = normalize(filters.category);
   const keyword = normalize(filters.q);
   const tag = normalize(filters.tag);
+  const archive = String(filters.archive ?? "").trim();
 
-  const filteredPosts = getPublishedPosts().filter((post) => {
+  return getPublishedPosts().filter((post) => {
     if (category && normalize(post.category) !== category) {
       return false;
     }
 
     if (tag && !post.tags.some((item) => normalize(item) === tag)) {
+      return false;
+    }
+
+    if (archive && getArchiveKey(post) !== archive) {
       return false;
     }
 
@@ -88,8 +107,58 @@ export function listPosts(filters = {}) {
 
     return searchTarget.includes(keyword);
   });
+}
+
+export function listPosts(filters = {}) {
+  const filteredPosts = getFilteredPublishedPosts(filters);
 
   return sortByPublishedDate(filteredPosts).map(toPostPreview);
+}
+
+export function listPaginatedPosts(filters = {}) {
+  const pageSize = Math.min(12, normalizePositiveInteger(filters.pageSize, 3));
+  const requestedPage = normalizePositiveInteger(filters.page, 1);
+  const items = listPosts(filters);
+  const totalItems = items.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const page = Math.min(requestedPage, totalPages);
+  const startIndex = (page - 1) * pageSize;
+
+  return {
+    items: items.slice(startIndex, startIndex + pageSize),
+    pagination: {
+      page,
+      pageSize,
+      totalItems,
+      totalPages,
+      hasPreviousPage: page > 1,
+      hasNextPage: page < totalPages
+    }
+  };
+}
+
+export function listArchives() {
+  const archiveMap = new Map();
+
+  for (const post of getPublishedPosts()) {
+    const key = getArchiveKey(post);
+    const current = archiveMap.get(key) ?? {
+      key,
+      year: Number.parseInt(key.slice(0, 4), 10),
+      month: Number.parseInt(key.slice(5, 7), 10),
+      count: 0
+    };
+
+    current.count += 1;
+    archiveMap.set(key, current);
+  }
+
+  return [...archiveMap.values()]
+    .sort((left, right) => right.key.localeCompare(left.key))
+    .map((item) => ({
+      ...item,
+      label: `${item.year} 年 ${item.month} 月`
+    }));
 }
 
 export function getPostBySlug(slug) {
