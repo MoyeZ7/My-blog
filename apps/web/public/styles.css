@@ -198,7 +198,9 @@ input {
 .stats-grid,
 .post-tags,
 .active-filters,
-.tag-list {
+.tag-list,
+.archive-list,
+.pagination {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
@@ -253,6 +255,12 @@ input {
 .active-filters {
   align-items: center;
   margin-bottom: 1rem;
+}
+
+.feed-summary {
+  margin-bottom: 1rem;
+  color: var(--muted);
+  line-height: 1.75;
 }
 
 .filter-summary {
@@ -501,6 +509,46 @@ input {
   padding: 1.5rem;
 }
 
+.pagination {
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+  padding: 1rem 1.2rem;
+  border-radius: 1.4rem;
+  border: 1px solid var(--border);
+  background: rgba(255, 251, 245, 0.76);
+}
+
+.pagination-meta {
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.pagination-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.page-button {
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  padding: 0.72rem 1rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.page-button:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.page-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 @media (max-width: 860px) {
   .hero,
   .content-grid,
@@ -527,5 +575,9 @@ input {
   .comment-form-actions,
   .comment-card-head {
     display: grid;
+  }
+
+  .pagination {
+    align-items: start;
   }
 }
