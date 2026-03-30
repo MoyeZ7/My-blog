@@ -1,4 +1,5 @@
 const apiOrigin = window.localStorage.getItem("my-blog-api-origin") ?? "http://localhost:3001";
+const webOrigin = window.localStorage.getItem("my-blog-web-origin") ?? "http://localhost:3000";
 const tokenKey = "my-blog-admin-token";
 const adminState = {
   coverQuery: "",
@@ -6,6 +7,7 @@ const adminState = {
   category: "",
   categoryAdminQuery: "",
   editingSlug: null,
+  slugTouched: false,
   commentQuery: "",
   commentStatus: "",
   tagQuery: ""
@@ -94,6 +96,31 @@ function setCoverUploadMessage(message, isError = false) {
 
 function getEffectiveCoverImage() {
   return document.querySelector("#create-cover-input").value.trim() || coverLibraryState.defaultCoverImage;
+}
+
+function slugifyTitle(value) {
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return normalized;
+}
+
+function normalizeSlugInput(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+}
+
+function buildPublicPostUrl(slug) {
+  if (!slug) {
+    return "";
+  }
+
+  return `${webOrigin}/post?slug=${encodeURIComponent(slug)}`;
 }
 
 function setEditorMode(isEditing) {
@@ -215,6 +242,18 @@ function renderCoverPreview() {
   note.textContent = "未填写封面地址时，会自动使用系统默认封面。";
 }
 
+function renderSlugPreview() {
+  const slug = document.querySelector("#create-slug-input").value.trim();
+  const node = document.querySelector("#slug-preview");
+
+  if (!slug) {
+    node.textContent = "公开链接会显示在这里。";
+    return;
+  }
+
+  node.textContent = buildPublicPostUrl(slug);
+}
+
 function createCoverOptionCard(item) {
   const card = document.createElement("article");
   const isActive = getEffectiveCoverImage() === item.url;
@@ -278,8 +317,10 @@ function resetCreatePostForm() {
   document.querySelector("#cover-upload-input").value = "";
   document.querySelector("#create-status-select").value = "published";
   adminState.editingSlug = null;
+  adminState.slugTouched = false;
   setEditorMode(false);
   setCoverUploadMessage("");
+  renderSlugPreview();
   renderCoverPreview();
 }
 
@@ -300,6 +341,7 @@ function renderAdminPosts(items, total) {
     ...items.map((item) => {
       const fragment = template.content.cloneNode(true);
       fragment.querySelector('[data-role="title"]').textContent = item.title;
+      fragment.querySelector('[data-role="slug"]').textContent = item.slug;
       fragment.querySelector('[data-role="excerpt"]').textContent = item.excerpt;
       fragment.querySelector('[data-role="category"]').textContent = item.category;
       fragment.querySelector('[data-role="status"]').textContent = item.status;
@@ -511,13 +553,16 @@ async function loadAdminPostDetail(slug) {
   });
 
   adminState.editingSlug = data.post.slug;
+  adminState.slugTouched = true;
   document.querySelector("#create-title-input").value = data.post.title;
+  document.querySelector("#create-slug-input").value = data.post.slug;
   document.querySelector("#create-category-input").value = data.post.category;
   document.querySelector("#create-status-select").value = data.post.status;
   document.querySelector("#create-excerpt-input").value = data.post.excerpt;
   document.querySelector("#create-tags-input").value = data.post.tags;
   document.querySelector("#create-cover-input").value = data.post.coverImage;
   document.querySelector("#create-content-input").value = data.post.content;
+  renderSlugPreview();
   renderCoverPreview();
   setCreatePostMessage(`正在编辑：${data.post.title}`);
   setEditorMode(true);
@@ -783,6 +828,7 @@ function bindCreatePostForm() {
 
     const payload = {
       title: document.querySelector("#create-title-input").value.trim(),
+      slug: document.querySelector("#create-slug-input").value.trim(),
       category: document.querySelector("#create-category-input").value.trim(),
       status: document.querySelector("#create-status-select").value,
       excerpt: document.querySelector("#create-excerpt-input").value.trim(),
@@ -825,6 +871,33 @@ function bindEditorControls() {
   document.querySelector("#cancel-edit-button").addEventListener("click", () => {
     setCreatePostMessage("");
     resetCreatePostForm();
+  });
+}
+
+function bindSlugControls() {
+  const titleInput = document.querySelector("#create-title-input");
+  const slugInput = document.querySelector("#create-slug-input");
+  const generateButton = document.querySelector("#generate-slug-button");
+
+  titleInput.addEventListener("input", () => {
+    if (adminState.slugTouched) {
+      return;
+    }
+
+    slugInput.value = slugifyTitle(titleInput.value);
+    renderSlugPreview();
+  });
+
+  slugInput.addEventListener("input", () => {
+    adminState.slugTouched = true;
+    slugInput.value = normalizeSlugInput(slugInput.value);
+    renderSlugPreview();
+  });
+
+  generateButton.addEventListener("click", () => {
+    slugInput.value = slugifyTitle(titleInput.value);
+    adminState.slugTouched = true;
+    renderSlugPreview();
   });
 }
 
@@ -1238,6 +1311,7 @@ bindCoverFilters();
 bindPostActions();
 bindCreatePostForm();
 bindEditorControls();
+bindSlugControls();
 bindCoverPreview();
 bindCoverActions();
 bindCoverUploadForm();
@@ -1249,6 +1323,7 @@ bindCategoryRenameForm();
 bindCategoryActions();
 
 setEditorMode(false);
+renderSlugPreview();
 
 loadDashboard().then(async () => {
   await loadAdminPosts();
