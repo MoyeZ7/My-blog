@@ -28,6 +28,8 @@ import {
   updateAdminSiteConfig
 } from "../src/admin-service.js";
 
+const testAdminPassword = process.env.ADMIN_PASSWORD ?? "test-admin-password";
+
 test.afterEach(() => {
   resetContentStore();
 });
@@ -35,7 +37,7 @@ test.afterEach(() => {
 test("loginAdmin creates a reusable session for valid credentials", () => {
   const session = loginAdmin({
     username: "admin",
-    password: "123456"
+    password: testAdminPassword
   });
 
   assert.ok(session);
