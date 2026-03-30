@@ -671,6 +671,11 @@ function bindLoginForm() {
     const username = document.querySelector("#username-input").value.trim();
     const password = document.querySelector("#password-input").value;
 
+    if (!username || !password) {
+      setMessage("请输入后台账号和密码。", true);
+      return;
+    }
+
     try {
       const session = await fetchJson("/api/admin/login", {
         method: "POST",
