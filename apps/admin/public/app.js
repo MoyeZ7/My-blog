@@ -254,6 +254,22 @@ function renderSlugPreview() {
   node.textContent = buildPublicPostUrl(slug);
 }
 
+function renderSeoPreview() {
+  const title = document.querySelector("#create-title-input").value.trim();
+  const slug = document.querySelector("#create-slug-input").value.trim();
+  const excerpt = document.querySelector("#create-excerpt-input").value.trim();
+  const seoTitleInput = document.querySelector("#create-seo-title-input").value.trim();
+  const seoDescriptionInput = document.querySelector("#create-seo-description-input").value.trim();
+  const previewTitle = document.querySelector("#seo-preview-title");
+  const previewUrl = document.querySelector("#seo-preview-url");
+  const previewDescription = document.querySelector("#seo-preview-description");
+
+  previewTitle.textContent = seoTitleInput || title || "搜索结果标题会显示在这里";
+  previewUrl.textContent = slug ? buildPublicPostUrl(slug) : "生成 slug 后会显示公开链接";
+  previewDescription.textContent =
+    seoDescriptionInput || excerpt || "摘要会显示在这里，帮助你预览搜索结果里的描述文案。";
+}
+
 function createCoverOptionCard(item) {
   const card = document.createElement("article");
   const isActive = getEffectiveCoverImage() === item.url;
@@ -321,6 +337,7 @@ function resetCreatePostForm() {
   setEditorMode(false);
   setCoverUploadMessage("");
   renderSlugPreview();
+  renderSeoPreview();
   renderCoverPreview();
 }
 
@@ -559,10 +576,13 @@ async function loadAdminPostDetail(slug) {
   document.querySelector("#create-category-input").value = data.post.category;
   document.querySelector("#create-status-select").value = data.post.status;
   document.querySelector("#create-excerpt-input").value = data.post.excerpt;
+  document.querySelector("#create-seo-title-input").value = data.post.seoTitle ?? "";
+  document.querySelector("#create-seo-description-input").value = data.post.seoDescription ?? "";
   document.querySelector("#create-tags-input").value = data.post.tags;
   document.querySelector("#create-cover-input").value = data.post.coverImage;
   document.querySelector("#create-content-input").value = data.post.content;
   renderSlugPreview();
+  renderSeoPreview();
   renderCoverPreview();
   setCreatePostMessage(`正在编辑：${data.post.title}`);
   setEditorMode(true);
@@ -834,6 +854,8 @@ function bindCreatePostForm() {
     const payload = {
       title: document.querySelector("#create-title-input").value.trim(),
       slug: document.querySelector("#create-slug-input").value.trim(),
+      seoTitle: document.querySelector("#create-seo-title-input").value.trim(),
+      seoDescription: document.querySelector("#create-seo-description-input").value.trim(),
       category: document.querySelector("#create-category-input").value.trim(),
       status: document.querySelector("#create-status-select").value,
       excerpt: document.querySelector("#create-excerpt-input").value.trim(),
@@ -886,23 +908,41 @@ function bindSlugControls() {
 
   titleInput.addEventListener("input", () => {
     if (adminState.slugTouched) {
+      renderSeoPreview();
       return;
     }
 
     slugInput.value = slugifyTitle(titleInput.value);
     renderSlugPreview();
+    renderSeoPreview();
   });
 
   slugInput.addEventListener("input", () => {
     adminState.slugTouched = true;
     slugInput.value = normalizeSlugInput(slugInput.value);
     renderSlugPreview();
+    renderSeoPreview();
   });
 
   generateButton.addEventListener("click", () => {
     slugInput.value = slugifyTitle(titleInput.value);
     adminState.slugTouched = true;
     renderSlugPreview();
+    renderSeoPreview();
+  });
+}
+
+function bindSeoPreview() {
+  document.querySelector("#create-excerpt-input").addEventListener("input", () => {
+    renderSeoPreview();
+  });
+
+  document.querySelector("#create-seo-title-input").addEventListener("input", () => {
+    renderSeoPreview();
+  });
+
+  document.querySelector("#create-seo-description-input").addEventListener("input", () => {
+    renderSeoPreview();
   });
 }
 
@@ -1317,6 +1357,7 @@ bindPostActions();
 bindCreatePostForm();
 bindEditorControls();
 bindSlugControls();
+bindSeoPreview();
 bindCoverPreview();
 bindCoverActions();
 bindCoverUploadForm();
@@ -1329,6 +1370,7 @@ bindCategoryActions();
 
 setEditorMode(false);
 renderSlugPreview();
+renderSeoPreview();
 
 loadDashboard().then(async () => {
   await loadAdminPosts();
