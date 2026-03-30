@@ -234,6 +234,21 @@ input {
   gap: 1.5rem;
 }
 
+.archive-layout {
+  gap: 1.5rem;
+}
+
+.archive-hero {
+  padding: 2rem;
+}
+
+.archive-hero h1 {
+  margin: 0 0 0.9rem;
+  font-family: "Songti SC", "STSong", "Noto Serif SC", serif;
+  font-size: clamp(2.4rem, 4vw, 4rem);
+  line-height: 1.08;
+}
+
 .section-head {
   margin-bottom: 1.2rem;
 }
@@ -343,8 +358,17 @@ input {
   background: var(--accent);
 }
 
+.archive-page-link {
+  margin-top: 1rem;
+}
+
 .side-card-accent {
   background: linear-gradient(180deg, rgba(255, 243, 233, 0.95), rgba(252, 232, 215, 0.92));
+}
+
+.archive-note {
+  color: var(--muted);
+  line-height: 1.75;
 }
 
 .detail-layout {

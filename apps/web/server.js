@@ -23,6 +23,10 @@ function resolvePathname(pathname) {
     return "/post.html";
   }
 
+  if (pathname === "/archive") {
+    return "/archive.html";
+  }
+
   return pathname;
 }
 

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>我的博客 | 归档</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page-shell archive-shell">
+    <div class="background-orb background-orb-left"></div>
+    <div class="background-orb background-orb-right"></div>
+
+    <header class="site-header">
+      <a id="site-brand" class="brandmark" href="/">我的博客</a>
+      <a class="text-link" href="/">返回首页</a>
+    </header>
+
+    <main class="layout archive-layout">
+      <section class="archive-hero detail-card">
+        <p class="eyebrow">时间归档</p>
+        <h1 id="archive-title">按月份回看内容更新</h1>
+        <p id="archive-description" class="hero-text">
+          这里会按月份整理公开文章，方便从时间维度回看这个博客是如何一步步构建出来的。
+        </p>
+        <div id="archive-feed-summary" class="feed-summary"></div>
+      </section>
+
+      <section class="content-grid">
+        <div class="main-column">
+          <div class="section-head">
+            <p class="eyebrow">归档内容</p>
+            <h2>该月份的公开文章</h2>
+          </div>
+          <div id="archive-post-list" class="post-list"></div>
+          <div id="archive-pagination" class="pagination"></div>
+        </div>
+
+        <aside class="side-column">
+          <div class="side-card">
+            <p class="eyebrow">月份索引</p>
+            <h2>切换归档</h2>
+            <div id="archive-filter-list" class="archive-list"></div>
+          </div>
+
+          <div class="side-card side-card-accent">
+            <p class="eyebrow">阅读路径</p>
+            <h2>从时间维度理解项目演进</h2>
+            <p class="archive-note">
+              如果首页更像按主题阅读，这里就是按时间回看版本变化。它很适合和后台内容管理、持久化能力一起使用。
+            </p>
+            <a class="text-link" href="/">回到首页继续按主题浏览</a>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <template id="archive-post-card-template">
+      <article class="post-card">
+        <img class="post-card-image" alt="" />
+        <div class="post-card-body">
+          <div class="post-meta">
+            <span data-role="category"></span>
+            <span data-role="date"></span>
+            <span data-role="reading-time"></span>
+          </div>
+          <h3 data-role="title"></h3>
+          <p data-role="excerpt"></p>
+          <div data-role="tags" class="post-tags"></div>
+          <a class="text-link" data-role="link">阅读全文</a>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="/archive.js"></script>
+  </body>
+</html>
