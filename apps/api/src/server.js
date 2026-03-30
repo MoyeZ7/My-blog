@@ -1,4 +1,5 @@
 import http from "node:http";
+import { getContentSnapshot, replaceContentSnapshot } from "../../../packages/content/src/content-store.js";
 import {
   createAdminPost,
   deleteAdminCategory,
@@ -29,9 +30,34 @@ import {
   listPosts,
   listTags
 } from "./blog-service.js";
+import {
+  initializeMySqlStorage,
+  persistContentSnapshotToMySql,
+  shouldUseMySqlStorage
+} from "./mysql-store.js";
 import { sendJson, sendNotFound } from "./response.js";
 
 const port = Number(process.env.PORT ?? 3001);
+
+async function bootstrapStorage() {
+  if (!shouldUseMySqlStorage()) {
+    return;
+  }
+
+  const snapshot = await initializeMySqlStorage(getContentSnapshot());
+
+  if (snapshot) {
+    replaceContentSnapshot(snapshot);
+  }
+}
+
+async function persistExternalStorage() {
+  if (!shouldUseMySqlStorage()) {
+    return;
+  }
+
+  await persistContentSnapshotToMySql(getContentSnapshot());
+}
 
 function readJsonBody(request) {
   return new Promise((resolve, reject) => {
@@ -174,6 +200,8 @@ async function handlePostRequest(pathname, request, response) {
       return;
     }
 
+    await persistExternalStorage();
+
     sendJson(response, 201, result);
     return;
   }
@@ -229,6 +257,8 @@ async function handlePostRequest(pathname, request, response) {
       });
       return;
     }
+
+    await persistExternalStorage();
 
     sendJson(response, 201, {
       session: {
@@ -434,6 +464,8 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
+    await persistExternalStorage();
+
     sendJson(response, 200, {
       session: {
         username: session.username,
@@ -459,6 +491,8 @@ const server = http.createServer(async (request, response) => {
       });
       return;
     }
+
+    await persistExternalStorage();
 
     sendJson(response, 200, {
       session: {
@@ -497,6 +531,8 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
+    await persistExternalStorage();
+
     sendJson(response, 200, {
       session: {
         username: session.username,
@@ -533,6 +569,8 @@ const server = http.createServer(async (request, response) => {
       });
       return;
     }
+
+    await persistExternalStorage();
 
     sendJson(response, 200, {
       session: {
@@ -571,6 +609,8 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
+    await persistExternalStorage();
+
     sendJson(response, 200, {
       session: {
         username: session.username,
@@ -607,6 +647,8 @@ const server = http.createServer(async (request, response) => {
       });
       return;
     }
+
+    await persistExternalStorage();
 
     sendJson(response, 200, {
       session: {
@@ -645,6 +687,8 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
+    await persistExternalStorage();
+
     sendJson(response, 200, {
       session: {
         username: session.username,
@@ -682,6 +726,8 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
+    await persistExternalStorage();
+
     sendJson(response, 200, {
       session: {
         username: session.username,
@@ -704,6 +750,8 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 });
+
+await bootstrapStorage();
 
 server.listen(port, () => {
   console.log(`My Blog API listening on http://localhost:${port}`);
