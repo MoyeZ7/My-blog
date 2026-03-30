@@ -228,6 +228,51 @@
                 />
               </label>
 
+              <div class="cover-manager field-wide">
+                <article class="cover-preview-card">
+                  <div class="section-head">
+                    <p class="eyebrow">封面预览</p>
+                    <h2>当前文章封面</h2>
+                  </div>
+                  <img id="cover-preview-image" class="cover-preview-image" alt="当前封面预览" />
+                  <strong id="cover-preview-title" class="cover-preview-title">系统默认封面</strong>
+                  <p id="cover-preview-note" class="muted-text">
+                    未填写封面地址时，会自动使用系统默认封面。
+                  </p>
+                  <div class="cover-preview-actions">
+                    <button id="apply-default-cover-button" class="secondary-button" type="button">
+                      使用默认封面
+                    </button>
+                    <button id="open-cover-link-button" class="secondary-button" type="button">
+                      新窗口查看
+                    </button>
+                  </div>
+                </article>
+
+                <article class="cover-library-card">
+                  <div class="section-head section-head-split">
+                    <div>
+                      <p class="eyebrow">封面库</p>
+                      <h2>快速选择可用封面</h2>
+                    </div>
+                    <p id="cover-library-summary" class="muted-text"></p>
+                  </div>
+
+                  <form id="cover-filter-form" class="cover-filter-form">
+                    <input
+                      id="cover-search-input"
+                      class="filter-input"
+                      type="search"
+                      name="q"
+                      placeholder="搜索封面标题、说明或来源"
+                    />
+                    <button class="secondary-button" type="submit">筛选封面</button>
+                  </form>
+
+                  <div id="cover-library-list" class="cover-library-list"></div>
+                </article>
+              </div>
+
               <label class="field field-wide">
                 <span>正文</span>
                 <textarea
