@@ -10,12 +10,14 @@ import {
   deleteAdminCategory,
   deleteAdminPost,
   deleteAdminTag,
+  getDefaultCoverImage,
   getAdminPostBySlug,
   getAdminDashboardSummary,
   getAdminSession,
   getAdminSiteConfig,
   listAdminCategories,
   listAdminComments,
+  listAdminCoverOptions,
   listAdminPosts,
   listAdminTags,
   loginAdmin,
@@ -99,6 +101,58 @@ test("createAdminPost validates fields and stores draft or published posts", () 
 
   posts.splice(0, 1);
   assert.equal(posts.length, beforeCount);
+});
+
+test("listAdminCoverOptions returns curated covers and can filter by keyword", () => {
+  const allCovers = listAdminCoverOptions();
+  const filteredCovers = listAdminCoverOptions({ q: "架构" });
+
+  assert.ok(allCovers.total >= 6);
+  assert.equal(allCovers.items[0].isDefault, true);
+  assert.equal(allCovers.defaultCoverImage, getDefaultCoverImage());
+  assert.equal(filteredCovers.total, 1);
+  assert.equal(filteredCovers.items[0].title, "结构与架构");
+});
+
+test("createAdminPost and updateAdminPost validate cover urls and fill default cover", () => {
+  const invalidCreateResult = createAdminPost({
+    title: "封面地址校验文章",
+    excerpt: "用于验证封面地址校验。",
+    category: "测试",
+    tags: "封面, 校验",
+    coverImage: "not-a-valid-url",
+    content: "正文内容",
+    status: "draft"
+  });
+
+  assert.equal(invalidCreateResult.error, "封面图地址无效，请使用 http 或 https 链接");
+
+  const createResult = createAdminPost({
+    title: "封面默认值文章",
+    excerpt: "用于验证默认封面回填。",
+    category: "测试",
+    tags: "封面, 默认",
+    coverImage: "",
+    content: "正文内容",
+    status: "draft"
+  });
+
+  assert.ok(createResult.post);
+  assert.equal(posts[0].coverImage, getDefaultCoverImage());
+
+  const invalidUpdateResult = updateAdminPost(createResult.post.slug, {
+    title: "封面默认值文章",
+    excerpt: "用于验证默认封面回填。",
+    category: "测试",
+    tags: "封面, 默认",
+    coverImage: "ftp://invalid",
+    content: "正文内容",
+    status: "draft"
+  });
+
+  assert.equal(invalidUpdateResult.error, "封面图地址无效，请使用 http 或 https 链接");
+
+  posts.splice(0, 1);
 });
 
 test("getAdminPostBySlug returns editable post detail and updateAdminPost can change status", () => {
