@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { comments } from "../../../packages/content/src/comments.js";
+import { resetContentStore } from "../../../packages/content/src/content-store.js";
 import { posts } from "../../../packages/content/src/posts.js";
 import { siteConfig } from "../../../packages/content/src/site-config.js";
 import { getSiteStats, listApprovedCommentsByPostSlug, listPosts } from "../src/blog-service.js";
@@ -24,6 +25,10 @@ import {
   updateAdminPost,
   updateAdminSiteConfig
 } from "../src/admin-service.js";
+
+test.afterEach(() => {
+  resetContentStore();
+});
 
 test("loginAdmin creates a reusable session for valid credentials", () => {
   const session = loginAdmin({

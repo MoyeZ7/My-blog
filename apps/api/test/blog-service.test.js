@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { comments } from "../../../packages/content/src/comments.js";
+import { resetContentStore } from "../../../packages/content/src/content-store.js";
 import {
   createPublicComment,
   getPublicSiteConfig,
@@ -11,6 +12,10 @@ import {
   listPosts,
   listTags
 } from "../src/blog-service.js";
+
+test.afterEach(() => {
+  resetContentStore();
+});
 
 test("listPosts returns seeded posts in descending published order", () => {
   const items = listPosts();
