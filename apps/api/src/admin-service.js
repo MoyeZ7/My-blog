@@ -132,6 +132,33 @@ function slugify(value) {
   return `post-${Date.now()}`;
 }
 
+function normalizeSlug(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+}
+
+function validateSlug(value) {
+  const slug = normalizeSlug(value);
+
+  if (!slug) {
+    return {
+      error: "Slug 不能为空"
+    };
+  }
+
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+    return {
+      error: "Slug 仅支持小写字母、数字和中划线"
+    };
+  }
+
+  return {
+    value: slug
+  };
+}
+
 function parseTags(value) {
   return [...new Set(
     String(value ?? "")
@@ -515,7 +542,15 @@ export function createAdminPost(input) {
     };
   }
 
-  const slug = normalize(input.slug) || slugify(title);
+  const slugResult = input.slug ? validateSlug(input.slug) : { value: slugify(title) };
+
+  if (slugResult.error) {
+    return {
+      error: slugResult.error
+    };
+  }
+
+  const slug = slugResult.value;
 
   if (posts.some((post) => post.slug === slug)) {
     return {
@@ -601,8 +636,26 @@ export function updateAdminPost(slug, input) {
     };
   }
 
+  const slugResult = validateSlug(input.slug ?? post.slug);
+
+  if (slugResult.error) {
+    return {
+      error: slugResult.error
+    };
+  }
+
+  const nextSlug = slugResult.value;
+
+  if (posts.some((item) => item.slug === nextSlug && item !== post)) {
+    return {
+      error: "Slug 已存在，请更换标题或自定义 slug"
+    };
+  }
+
   const today = new Date().toISOString().slice(0, 10);
+  const previousSlug = post.slug;
   post.title = title;
+  post.slug = nextSlug;
   post.excerpt = excerpt;
   post.category = category;
   post.coverImage = coverImage.value;
@@ -617,6 +670,16 @@ export function updateAdminPost(slug, input) {
 
   if (status === "draft") {
     post.publishedAt = null;
+  }
+
+  if (previousSlug !== nextSlug) {
+    for (const comment of comments) {
+      if (comment.postSlug === previousSlug) {
+        comment.postSlug = nextSlug;
+      }
+    }
+
+    saveComments();
   }
 
   savePosts();
