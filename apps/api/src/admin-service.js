@@ -13,7 +13,7 @@ import { listUploadedImages } from "./upload-service.js";
 const sessions = new Map();
 const adminCredentials = {
   username: process.env.ADMIN_USERNAME ?? "admin",
-  password: process.env.ADMIN_PASSWORD ?? "123456",
+  password: process.env.ADMIN_PASSWORD ?? "",
   displayName: process.env.ADMIN_DISPLAY_NAME ?? "站点管理员"
 };
 const defaultCoverImage =
@@ -316,6 +316,10 @@ function getAdminStats() {
 }
 
 export function loginAdmin({ username, password }) {
+  if (!adminCredentials.password) {
+    return null;
+  }
+
   if (username !== adminCredentials.username || password !== adminCredentials.password) {
     return null;
   }
@@ -338,6 +342,10 @@ export function getAdminSession(token) {
   }
 
   return sessions.get(token) ?? null;
+}
+
+export function isAdminCredentialsConfigured() {
+  return Boolean(adminCredentials.password);
 }
 
 export function getAdminDashboardSummary() {

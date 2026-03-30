@@ -1,13 +1,20 @@
 import mysql from "mysql2/promise";
 
 function createConfig() {
+  const storageMode = process.env.MY_BLOG_STORAGE ?? "file";
+  const password = process.env.MY_BLOG_DB_PASSWORD ?? "";
+
+  if (storageMode === "mysql" && !password) {
+    throw new Error("Missing MY_BLOG_DB_PASSWORD for mysql storage mode");
+  }
+
   return {
     host: process.env.MY_BLOG_DB_HOST ?? "127.0.0.1",
     port: Number(process.env.MY_BLOG_DB_PORT ?? 3306),
     user: process.env.MY_BLOG_DB_USER ?? "root",
-    password: process.env.MY_BLOG_DB_PASSWORD ?? "123456",
+    password,
     database: process.env.MY_BLOG_DB_NAME ?? "my_blog",
-    storageMode: process.env.MY_BLOG_STORAGE ?? "file"
+    storageMode
   };
 }
 
