@@ -38,6 +38,24 @@ async function fetchJson(path, options = {}) {
   return payload;
 }
 
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.addEventListener("load", () => {
+      const result = String(reader.result ?? "");
+      const [, contentBase64 = ""] = result.split(",", 2);
+      resolve(contentBase64);
+    });
+
+    reader.addEventListener("error", () => {
+      reject(new Error("图片读取失败，请重新选择文件"));
+    });
+
+    reader.readAsDataURL(file);
+  });
+}
+
 function setMessage(message, isError = false) {
   const node = document.querySelector("#login-message");
   node.textContent = message;
@@ -64,6 +82,12 @@ function setTagMessage(message, isError = false) {
 
 function setCategoryMessage(message, isError = false) {
   const node = document.querySelector("#category-message");
+  node.textContent = message;
+  node.classList.toggle("is-error", isError);
+}
+
+function setCoverUploadMessage(message, isError = false) {
+  const node = document.querySelector("#cover-upload-message");
   node.textContent = message;
   node.classList.toggle("is-error", isError);
 }
@@ -251,9 +275,11 @@ function renderAdminCoverOptions(items, total) {
 
 function resetCreatePostForm() {
   document.querySelector("#create-post-form").reset();
+  document.querySelector("#cover-upload-input").value = "";
   document.querySelector("#create-status-select").value = "published";
   adminState.editingSlug = null;
   setEditorMode(false);
+  setCoverUploadMessage("");
   renderCoverPreview();
 }
 
@@ -843,6 +869,58 @@ function bindCoverActions() {
   });
 }
 
+function bindCoverUploadForm() {
+  document.querySelector("#cover-upload-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const token = getStoredToken();
+
+    if (!token) {
+      setCoverUploadMessage("请先登录后台。", true);
+      return;
+    }
+
+    const input = document.querySelector("#cover-upload-input");
+    const submitButton = document.querySelector("#upload-cover-button");
+    const [file] = input.files ?? [];
+
+    if (!file) {
+      setCoverUploadMessage("请先选择一张图片。", true);
+      return;
+    }
+
+    submitButton.disabled = true;
+    submitButton.textContent = "上传中...";
+
+    try {
+      const contentBase64 = await readFileAsBase64(file);
+      const result = await fetchJson("/api/admin/uploads", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          mimeType: file.type,
+          contentBase64
+        })
+      });
+
+      document.querySelector("#create-cover-input").value = result.asset.url;
+      input.value = "";
+      setCoverUploadMessage(`图片已上传：${result.asset.fileName}`);
+      setCreatePostMessage("封面已上传并填入表单，可以继续保存文章。");
+      await loadAdminCovers();
+    } catch (error) {
+      setCoverUploadMessage(error.message, true);
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = "上传并使用";
+    }
+  });
+}
+
 function bindCommentActions() {
   document.querySelector("#comment-admin-list").addEventListener("click", async (event) => {
     const target = event.target;
@@ -1162,6 +1240,7 @@ bindCreatePostForm();
 bindEditorControls();
 bindCoverPreview();
 bindCoverActions();
+bindCoverUploadForm();
 bindCommentActions();
 bindSiteConfigForm();
 bindTagRenameForm();
