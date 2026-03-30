@@ -7,6 +7,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const defaultDataDir = process.env.MY_BLOG_DATA_DIR
   ? path.resolve(process.cwd(), process.env.MY_BLOG_DATA_DIR)
   : path.resolve(currentDir, "../data");
+const defaultStorageMode = process.env.MY_BLOG_STORAGE ?? "file";
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -37,6 +38,14 @@ function createSeedSnapshot() {
     posts: clone(seedPosts),
     comments: clone(seedComments),
     siteConfig: clone(seedSiteConfig)
+  };
+}
+
+function cloneSnapshot(snapshot) {
+  return {
+    posts: clone(snapshot.posts),
+    comments: clone(snapshot.comments),
+    siteConfig: clone(snapshot.siteConfig)
   };
 }
 
@@ -116,15 +125,39 @@ export function createContentStore(options = {}) {
     writeJson(filePaths.siteConfig, siteConfig);
   }
 
+  function saveAll() {
+    if (persistenceDisabled) {
+      return;
+    }
+
+    ensureDataFiles();
+    writeJson(filePaths.posts, posts);
+    writeJson(filePaths.comments, comments);
+    writeJson(filePaths.siteConfig, siteConfig);
+  }
+
+  function getSnapshot() {
+    return cloneSnapshot({
+      posts,
+      comments,
+      siteConfig
+    });
+  }
+
+  function replaceSnapshot(snapshot, options = {}) {
+    syncState(snapshot);
+
+    if (options.persist && !persistenceDisabled) {
+      saveAll();
+    }
+  }
+
   function reset(options = {}) {
     const snapshot = createSeedSnapshot();
     syncState(snapshot);
 
     if (options.persist && !persistenceDisabled) {
-      ensureDataFiles();
-      writeJson(filePaths.posts, posts);
-      writeJson(filePaths.comments, comments);
-      writeJson(filePaths.siteConfig, siteConfig);
+      saveAll();
     }
   }
 
@@ -137,6 +170,9 @@ export function createContentStore(options = {}) {
     savePosts,
     saveComments,
     saveSiteConfig,
+    saveAll,
+    getSnapshot,
+    replaceSnapshot,
     reload,
     reset,
     meta: {
@@ -148,7 +184,8 @@ export function createContentStore(options = {}) {
 
 const defaultStore = createContentStore({
   dataDir: defaultDataDir,
-  persistenceDisabled: process.env.MY_BLOG_DISABLE_PERSISTENCE === "1"
+  persistenceDisabled:
+    process.env.MY_BLOG_DISABLE_PERSISTENCE === "1" || defaultStorageMode === "mysql"
 });
 
 export const posts = defaultStore.posts;
@@ -165,6 +202,18 @@ export function saveComments() {
 
 export function saveSiteConfig() {
   defaultStore.saveSiteConfig();
+}
+
+export function saveAllContent() {
+  defaultStore.saveAll();
+}
+
+export function getContentSnapshot() {
+  return defaultStore.getSnapshot();
+}
+
+export function replaceContentSnapshot(snapshot, options) {
+  defaultStore.replaceSnapshot(snapshot, options);
 }
 
 export function reloadContentStore() {
