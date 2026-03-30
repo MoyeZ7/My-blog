@@ -187,6 +187,25 @@
                 <input id="create-title-input" name="title" placeholder="输入文章标题" />
               </label>
 
+              <div class="slug-manager field-wide">
+                <label class="field">
+                  <span>Slug</span>
+                  <input
+                    id="create-slug-input"
+                    name="slug"
+                    placeholder="例如：my-first-post"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                </label>
+                <div class="slug-sidecar">
+                  <button id="generate-slug-button" class="secondary-button" type="button">
+                    根据标题生成
+                  </button>
+                  <p id="slug-preview" class="muted-text">公开链接会显示在这里。</p>
+                </div>
+              </div>
+
               <label class="field">
                 <span>分类</span>
                 <input id="create-category-input" name="category" placeholder="例如：设计" />
@@ -447,6 +466,7 @@
       <article class="post-row">
         <div class="post-row-main">
           <strong data-role="title"></strong>
+          <span data-role="slug" class="post-row-slug"></span>
           <p data-role="excerpt" class="muted-text"></p>
         </div>
         <div class="post-row-meta">

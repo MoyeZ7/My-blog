@@ -231,6 +231,18 @@ h2 {
   gap: 0.85rem;
 }
 
+.slug-manager {
+  display: grid;
+  grid-template-columns: 1.4fr 0.9fr;
+  gap: 0.85rem;
+  align-items: end;
+}
+
+.slug-sidecar {
+  display: grid;
+  gap: 0.55rem;
+}
+
 .cover-manager {
   display: grid;
   grid-template-columns: 0.95fr 1.25fr;
@@ -381,6 +393,12 @@ h2 {
 .post-row-main {
   display: grid;
   gap: 0.35rem;
+}
+
+.post-row-slug {
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-family: "SFMono-Regular", "Menlo", "Monaco", monospace;
 }
 
 .post-row-meta {
@@ -550,6 +568,7 @@ h2 {
   .dashboard-header,
   .create-post-form,
   .site-config-form,
+  .slug-manager,
   .cover-manager,
   .cover-filter-form,
   .cover-library-list,
