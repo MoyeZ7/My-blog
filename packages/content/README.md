@@ -38,7 +38,7 @@ packages/content/data
 - `MY_BLOG_DB_USER`
 - `MY_BLOG_DB_PASSWORD`
 - `MY_BLOG_DB_NAME`
-  用于配置 MySQL 连接，默认值分别是 `127.0.0.1`、`3306`、`root`、`123456`、`my_blog`。
+  用于配置 MySQL 连接。其中 `MY_BLOG_DB_PASSWORD` 在 MySQL 模式下必须显式设置，避免把真实数据库密码写进仓库。
 
 ## 当前工作方式
 

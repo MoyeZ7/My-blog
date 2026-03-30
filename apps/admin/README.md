@@ -63,11 +63,11 @@ http://localhost:3002
 - `PUT /api/admin/categories`
 - `DELETE /api/admin/categories`
 
-## 当前默认账号
+## 管理员凭证配置
 
 ```text
-username: admin
-password: 123456
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=请自行设置一个强密码
 ```
 
 后续会继续补充：
