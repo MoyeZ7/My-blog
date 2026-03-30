@@ -11,6 +11,7 @@
 - 后台文章列表
 - 文章关键词与分类筛选
 - 后台新建文章表单
+- 封面预览、默认封面与封面库选择
 - 文章创建后自动刷新后台概览与列表
 - 后台文章编辑与表单回填
 - 在编辑流程中切换草稿 / 发布状态
@@ -43,6 +44,7 @@ http://localhost:3002
 - `POST /api/admin/login`
 - `GET /api/admin/summary`
 - `GET /api/admin/posts`
+- `GET /api/admin/covers`
 - `POST /api/admin/posts`
 - `GET /api/admin/posts/:slug`
 - `PUT /api/admin/posts/:slug`
