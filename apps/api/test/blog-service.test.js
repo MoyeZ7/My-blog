@@ -7,8 +7,10 @@ import {
   getPublicSiteConfig,
   getPostBySlug,
   getSiteStats,
+  listArchives,
   listApprovedCommentsByPostSlug,
   listCategories,
+  listPaginatedPosts,
   listPosts,
   listTags
 } from "../src/blog-service.js";
@@ -59,6 +61,67 @@ test("listPosts can search by keyword and tag", () => {
   assert.equal(searchItems[0].slug, "what-to-build-before-an-admin-panel");
   assert.equal(tagItems.length, 1);
   assert.equal(tagItems[0].slug, "editorial-layouts-that-do-not-feel-generic");
+});
+
+test("listPaginatedPosts slices the public feed and keeps pagination metadata stable", () => {
+  const firstPage = listPaginatedPosts({
+    page: 1,
+    pageSize: 2
+  });
+  const secondPage = listPaginatedPosts({
+    page: 2,
+    pageSize: 2
+  });
+
+  assert.equal(firstPage.items.length, 2);
+  assert.equal(firstPage.items[0].slug, "designing-a-blog-from-first-principles");
+  assert.equal(firstPage.items[1].slug, "editorial-layouts-that-do-not-feel-generic");
+  assert.deepEqual(firstPage.pagination, {
+    page: 1,
+    pageSize: 2,
+    totalItems: 4,
+    totalPages: 2,
+    hasPreviousPage: false,
+    hasNextPage: true
+  });
+
+  assert.equal(secondPage.items.length, 2);
+  assert.equal(secondPage.items[0].slug, "what-to-build-before-an-admin-panel");
+  assert.equal(secondPage.items[1].slug, "building-better-reading-rhythm");
+  assert.deepEqual(secondPage.pagination, {
+    page: 2,
+    pageSize: 2,
+    totalItems: 4,
+    totalPages: 2,
+    hasPreviousPage: true,
+    hasNextPage: false
+  });
+});
+
+test("listPaginatedPosts can filter by archive key", () => {
+  const page = listPaginatedPosts({
+    archive: "2026-03",
+    page: 1,
+    pageSize: 3
+  });
+
+  assert.equal(page.items.length, 3);
+  assert.equal(page.pagination.totalItems, 4);
+  assert.equal(page.pagination.totalPages, 2);
+});
+
+test("listArchives summarizes published posts by month", () => {
+  const items = listArchives();
+
+  assert.deepEqual(items, [
+    {
+      key: "2026-03",
+      year: 2026,
+      month: 3,
+      count: 4,
+      label: "2026 年 3 月"
+    }
+  ]);
 });
 
 test("listTags and site stats summarize content", () => {
