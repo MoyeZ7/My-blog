@@ -1,7 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { comments } from "../../../packages/content/src/comments.js";
-import { posts } from "../../../packages/content/src/posts.js";
-import { siteConfig } from "../../../packages/content/src/site-config.js";
+import {
+  comments,
+  posts,
+  saveComments,
+  savePosts,
+  saveSiteConfig,
+  siteConfig
+} from "../../../packages/content/src/content-store.js";
 import { listPosts } from "./blog-service.js";
 
 const sessions = new Map();
@@ -376,6 +381,7 @@ export function createAdminPost(input) {
   };
 
   posts.unshift(post);
+  savePosts();
 
   return {
     post: formatAdminPost(post)
@@ -447,6 +453,8 @@ export function updateAdminPost(slug, input) {
     post.publishedAt = null;
   }
 
+  savePosts();
+
   return {
     post: formatAdminPost(post)
   };
@@ -462,6 +470,7 @@ export function deleteAdminPost(slug) {
   }
 
   const [removedPost] = posts.splice(index, 1);
+  savePosts();
 
   return {
     post: formatAdminPost(removedPost)
@@ -514,6 +523,7 @@ export function updateAdminCommentStatus(id, status) {
   }
 
   comment.status = normalizedStatus;
+  saveComments();
 
   return {
     comment: formatAdminComment(comment)
@@ -555,6 +565,7 @@ export function updateAdminSiteConfig(input) {
   siteConfig.featureTitle = normalize(input.featureTitle);
   siteConfig.featureDescription = normalize(input.featureDescription);
   siteConfig.updatedAt = new Date().toISOString().slice(0, 10);
+  saveSiteConfig();
 
   return {
     config: formatAdminSiteConfig()
@@ -591,6 +602,8 @@ export function renameAdminCategory(currentName, nextName) {
     post.category = targetName;
     post.updatedAt = today;
   }
+
+  savePosts();
 
   return {
     category: collectAdminCategories().find((item) => item.name === targetName)
@@ -635,6 +648,8 @@ export function deleteAdminCategory(name, replacementName) {
     post.updatedAt = today;
   }
 
+  savePosts();
+
   return {
     category: {
       name: sourceName,
@@ -673,6 +688,8 @@ export function renameAdminTag(currentName, nextName) {
     post.updatedAt = new Date().toISOString().slice(0, 10);
   }
 
+  savePosts();
+
   return {
     tag: collectAdminTags().find((item) => item.name === targetName) ?? formatAdminTag(targetName, 0)
   };
@@ -705,6 +722,8 @@ export function deleteAdminTag(name) {
     post.tags = post.tags.filter((tag) => tag !== targetName);
     post.updatedAt = new Date().toISOString().slice(0, 10);
   }
+
+  savePosts();
 
   return {
     tag: {

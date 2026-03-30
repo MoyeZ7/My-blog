@@ -1,6 +1,5 @@
+import { comments, saveComments, siteConfig } from "../../../packages/content/src/content-store.js";
 import { posts } from "../../../packages/content/src/posts.js";
-import { comments } from "../../../packages/content/src/comments.js";
-import { siteConfig } from "../../../packages/content/src/site-config.js";
 
 function normalize(value) {
   return value?.trim().toLowerCase() ?? "";
@@ -190,6 +189,7 @@ export function createPublicComment(slug, input) {
   };
 
   comments.unshift(comment);
+  saveComments();
 
   return {
     message: "评论已提交，审核通过后展示。",
