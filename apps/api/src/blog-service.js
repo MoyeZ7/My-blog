@@ -170,6 +170,8 @@ export function getPostBySlug(slug) {
 
   return {
     ...post,
+    seoTitle: post.seoTitle ?? post.title,
+    seoDescription: post.seoDescription ?? post.excerpt,
     readingTimeMinutes: estimateReadingTime(post.content),
     relatedPosts: listPosts({ category: post.category })
       .filter((item) => item.slug !== post.slug)

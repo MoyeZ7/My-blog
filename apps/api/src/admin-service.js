@@ -175,6 +175,34 @@ function parseContent(value) {
     .filter(Boolean);
 }
 
+function normalizeSeoTitle(value, fallbackTitle) {
+  const seoTitle = normalize(value) || fallbackTitle;
+
+  if (seoTitle.length > 80) {
+    return {
+      error: "SEO 标题不能超过 80 个字符"
+    };
+  }
+
+  return {
+    value: seoTitle
+  };
+}
+
+function normalizeSeoDescription(value, fallbackExcerpt) {
+  const seoDescription = normalize(value) || fallbackExcerpt;
+
+  if (seoDescription.length > 180) {
+    return {
+      error: "SEO 描述不能超过 180 个字符"
+    };
+  }
+
+  return {
+    value: seoDescription
+  };
+}
+
 function formatAdminPost(post) {
   const status = normalizeStatus(post.status);
   const activityDate = post.updatedAt ?? post.publishedAt ?? new Date().toISOString().slice(0, 10);
@@ -199,6 +227,8 @@ function formatAdminEditorPost(post) {
     id: post.id,
     slug: post.slug,
     title: post.title,
+    seoTitle: post.seoTitle ?? post.title,
+    seoDescription: post.seoDescription ?? post.excerpt,
     excerpt: post.excerpt,
     category: post.category,
     tags: post.tags.join(", "),
@@ -510,6 +540,8 @@ export function createAdminPost(input) {
   const excerpt = normalize(input.excerpt);
   const category = normalize(input.category);
   const coverImage = normalizeCoverImage(input.coverImage);
+  const seoTitle = normalizeSeoTitle(input.seoTitle, title);
+  const seoDescription = normalizeSeoDescription(input.seoDescription, excerpt);
   const tags = parseTags(input.tags);
   const content = parseContent(input.content);
   const status = normalizeStatus(input.status);
@@ -541,6 +573,18 @@ export function createAdminPost(input) {
   if (!content.length) {
     return {
       error: "正文不能为空"
+    };
+  }
+
+  if (seoTitle.error) {
+    return {
+      error: seoTitle.error
+    };
+  }
+
+  if (seoDescription.error) {
+    return {
+      error: seoDescription.error
     };
   }
 
@@ -573,6 +617,8 @@ export function createAdminPost(input) {
     id: nextId,
     slug,
     title,
+    seoTitle: seoTitle.value,
+    seoDescription: seoDescription.value,
     excerpt,
     content,
     category,
@@ -604,6 +650,8 @@ export function updateAdminPost(slug, input) {
   const excerpt = normalize(input.excerpt);
   const category = normalize(input.category);
   const coverImage = normalizeCoverImage(input.coverImage);
+  const seoTitle = normalizeSeoTitle(input.seoTitle, title);
+  const seoDescription = normalizeSeoDescription(input.seoDescription, excerpt);
   const tags = parseTags(input.tags);
   const content = parseContent(input.content);
   const status = normalizeStatus(input.status);
@@ -638,6 +686,18 @@ export function updateAdminPost(slug, input) {
     };
   }
 
+  if (seoTitle.error) {
+    return {
+      error: seoTitle.error
+    };
+  }
+
+  if (seoDescription.error) {
+    return {
+      error: seoDescription.error
+    };
+  }
+
   if (coverImage.error) {
     return {
       error: coverImage.error
@@ -663,6 +723,8 @@ export function updateAdminPost(slug, input) {
   const today = new Date().toISOString().slice(0, 10);
   const previousSlug = post.slug;
   post.title = title;
+  post.seoTitle = seoTitle.value;
+  post.seoDescription = seoDescription.value;
   post.slug = nextSlug;
   post.excerpt = excerpt;
   post.category = category;
