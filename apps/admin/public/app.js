@@ -1,6 +1,7 @@
 const apiOrigin = window.localStorage.getItem("my-blog-api-origin") ?? "http://localhost:3001";
 const tokenKey = "my-blog-admin-token";
 const adminState = {
+  coverQuery: "",
   q: "",
   category: "",
   categoryAdminQuery: "",
@@ -8,6 +9,10 @@ const adminState = {
   commentQuery: "",
   commentStatus: "",
   tagQuery: ""
+};
+const coverLibraryState = {
+  defaultCoverImage: "",
+  items: []
 };
 
 function getStoredToken() {
@@ -61,6 +66,10 @@ function setCategoryMessage(message, isError = false) {
   const node = document.querySelector("#category-message");
   node.textContent = message;
   node.classList.toggle("is-error", isError);
+}
+
+function getEffectiveCoverImage() {
+  return document.querySelector("#create-cover-input").value.trim() || coverLibraryState.defaultCoverImage;
 }
 
 function setEditorMode(isEditing) {
@@ -156,11 +165,96 @@ function renderPostCategoryOptions(items) {
   root.innerHTML = options.join("");
 }
 
+function renderCoverPreview() {
+  const image = document.querySelector("#cover-preview-image");
+  const title = document.querySelector("#cover-preview-title");
+  const note = document.querySelector("#cover-preview-note");
+  const activeUrl = getEffectiveCoverImage();
+  const activeItem = coverLibraryState.items.find((item) => item.url === activeUrl);
+
+  image.src = activeUrl;
+  image.alt = activeItem?.title ?? "当前封面预览";
+
+  if (activeItem) {
+    title.textContent = activeItem.title;
+    note.textContent = `${activeItem.source} · ${activeItem.description}`;
+    return;
+  }
+
+  if (document.querySelector("#create-cover-input").value.trim()) {
+    title.textContent = "自定义封面链接";
+    note.textContent = "当前使用的是手动输入的封面地址。";
+    return;
+  }
+
+  title.textContent = "系统默认封面";
+  note.textContent = "未填写封面地址时，会自动使用系统默认封面。";
+}
+
+function createCoverOptionCard(item) {
+  const card = document.createElement("article");
+  const isActive = getEffectiveCoverImage() === item.url;
+  card.className = `cover-option-card${isActive ? " is-active" : ""}`;
+
+  const image = document.createElement("img");
+  image.className = "cover-option-image";
+  image.src = item.url;
+  image.alt = item.title;
+
+  const head = document.createElement("div");
+  head.className = "cover-option-head";
+
+  const title = document.createElement("strong");
+  title.textContent = item.title;
+
+  const meta = document.createElement("p");
+  meta.className = "cover-option-meta";
+  meta.textContent = `${item.source} · 已使用 ${item.usageCount} 次`;
+
+  const description = document.createElement("p");
+  description.className = "muted-text";
+  description.textContent = item.description;
+
+  const actions = document.createElement("div");
+  actions.className = "cover-option-actions";
+
+  const button = document.createElement("button");
+  button.className = "secondary-button";
+  button.type = "button";
+  button.dataset.role = "select-cover";
+  button.dataset.url = item.url;
+  button.textContent = isActive ? "当前已选" : "使用这张";
+
+  head.append(title, meta);
+  actions.append(button);
+  card.append(image, head, description, actions);
+  return card;
+}
+
+function renderAdminCoverOptions(items, total) {
+  coverLibraryState.items = items;
+  const root = document.querySelector("#cover-library-list");
+  document.querySelector("#cover-library-summary").textContent = `共 ${total} 张可选封面`;
+
+  if (!items.length) {
+    const empty = document.createElement("p");
+    empty.className = "muted-text";
+    empty.textContent = "没有找到符合条件的封面。";
+    root.replaceChildren(empty);
+    renderCoverPreview();
+    return;
+  }
+
+  root.replaceChildren(...items.map(createCoverOptionCard));
+  renderCoverPreview();
+}
+
 function resetCreatePostForm() {
   document.querySelector("#create-post-form").reset();
   document.querySelector("#create-status-select").value = "published";
   adminState.editingSlug = null;
   setEditorMode(false);
+  renderCoverPreview();
 }
 
 function renderAdminPosts(items, total) {
@@ -322,6 +416,17 @@ function createCategoryAdminQuery() {
   return query ? `?${query}` : "";
 }
 
+function createCoverQuery() {
+  const params = new URLSearchParams();
+
+  if (adminState.coverQuery) {
+    params.set("q", adminState.coverQuery);
+  }
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
 async function loadDashboard() {
   const token = getStoredToken();
 
@@ -387,6 +492,7 @@ async function loadAdminPostDetail(slug) {
   document.querySelector("#create-tags-input").value = data.post.tags;
   document.querySelector("#create-cover-input").value = data.post.coverImage;
   document.querySelector("#create-content-input").value = data.post.content;
+  renderCoverPreview();
   setCreatePostMessage(`正在编辑：${data.post.title}`);
   setEditorMode(true);
   document.querySelector("#create-post-form").scrollIntoView({
@@ -470,6 +576,23 @@ async function loadAdminCategoriesList() {
   renderAdminCategoriesList(data.items, data.total);
 }
 
+async function loadAdminCovers() {
+  const token = getStoredToken();
+
+  if (!token) {
+    return;
+  }
+
+  const data = await fetchJson(`/api/admin/covers${createCoverQuery()}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  coverLibraryState.defaultCoverImage = data.defaultCoverImage;
+  renderAdminCoverOptions(data.items, data.total);
+}
+
 function bindLoginForm() {
   document.querySelector("#login-form").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -494,6 +617,7 @@ function bindLoginForm() {
       await loadAdminSiteConfig();
       await loadAdminTags();
       await loadAdminCategoriesList();
+      await loadAdminCovers();
     } catch (error) {
       setMessage(error.message, true);
     }
@@ -539,6 +663,14 @@ function bindCategoryAdminFilters() {
     event.preventDefault();
     adminState.categoryAdminQuery = document.querySelector("#category-admin-search-input").value.trim();
     await loadAdminCategoriesList();
+  });
+}
+
+function bindCoverFilters() {
+  document.querySelector("#cover-filter-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    adminState.coverQuery = document.querySelector("#cover-search-input").value.trim();
+    await loadAdminCovers();
   });
 }
 
@@ -605,6 +737,7 @@ function bindPostActions() {
       await loadAdminPosts();
       await loadAdminTags();
       await loadAdminCategoriesList();
+      await loadAdminCovers();
     } catch (error) {
       setCreatePostMessage(error.message, true);
     }
@@ -655,6 +788,7 @@ function bindCreatePostForm() {
       await loadAdminComments();
       await loadAdminTags();
       await loadAdminCategoriesList();
+      await loadAdminCovers();
     } catch (error) {
       setCreatePostMessage(error.message, true);
     }
@@ -665,6 +799,47 @@ function bindEditorControls() {
   document.querySelector("#cancel-edit-button").addEventListener("click", () => {
     setCreatePostMessage("");
     resetCreatePostForm();
+  });
+}
+
+function bindCoverPreview() {
+  document.querySelector("#create-cover-input").addEventListener("input", () => {
+    renderCoverPreview();
+  });
+
+  document.querySelector("#apply-default-cover-button").addEventListener("click", () => {
+    document.querySelector("#create-cover-input").value = "";
+    renderCoverPreview();
+  });
+
+  document.querySelector("#open-cover-link-button").addEventListener("click", () => {
+    const coverImage = getEffectiveCoverImage();
+
+    if (!coverImage) {
+      return;
+    }
+
+    window.open(coverImage, "_blank", "noopener,noreferrer");
+  });
+}
+
+function bindCoverActions() {
+  document.querySelector("#cover-library-list").addEventListener("click", (event) => {
+    const target = event.target;
+
+    if (!(target instanceof HTMLElement) || target.dataset.role !== "select-cover") {
+      return;
+    }
+
+    const url = target.dataset.url;
+
+    if (!url) {
+      return;
+    }
+
+    document.querySelector("#create-cover-input").value = url;
+    renderAdminCoverOptions(coverLibraryState.items, coverLibraryState.items.length);
+    setCreatePostMessage("封面已填入表单，可以继续编辑并保存。");
   });
 }
 
@@ -981,9 +1156,12 @@ bindPostFilters();
 bindCommentFilters();
 bindTagFilters();
 bindCategoryAdminFilters();
+bindCoverFilters();
 bindPostActions();
 bindCreatePostForm();
 bindEditorControls();
+bindCoverPreview();
+bindCoverActions();
 bindCommentActions();
 bindSiteConfigForm();
 bindTagRenameForm();
@@ -999,4 +1177,5 @@ loadDashboard().then(async () => {
   await loadAdminSiteConfig();
   await loadAdminTags();
   await loadAdminCategoriesList();
+  await loadAdminCovers();
 });
