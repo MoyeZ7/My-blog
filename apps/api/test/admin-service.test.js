@@ -103,6 +103,46 @@ test("createAdminPost validates fields and stores draft or published posts", () 
   assert.equal(posts.length, beforeCount);
 });
 
+test("createAdminPost validates custom slug format and uniqueness", () => {
+  const invalidSlugResult = createAdminPost({
+    title: "自定义 slug 测试文章",
+    slug: "中文-slug",
+    excerpt: "用于验证 slug 格式。",
+    category: "测试",
+    tags: "slug, 测试",
+    content: "正文内容",
+    status: "draft"
+  });
+
+  assert.equal(invalidSlugResult.error, "Slug 仅支持小写字母、数字和中划线");
+
+  const duplicateSlugResult = createAdminPost({
+    title: "重复 slug 测试文章",
+    slug: "designing-a-blog-from-first-principles",
+    excerpt: "用于验证 slug 唯一性。",
+    category: "测试",
+    tags: "slug, 唯一",
+    content: "正文内容",
+    status: "draft"
+  });
+
+  assert.equal(duplicateSlugResult.error, "Slug 已存在，请更换标题或自定义 slug");
+
+  const createResult = createAdminPost({
+    title: "自定义 slug 成功文章",
+    slug: "custom-editorial-slug",
+    excerpt: "用于验证自定义 slug。",
+    category: "测试",
+    tags: "slug, 成功",
+    content: "正文内容",
+    status: "draft"
+  });
+
+  assert.equal(createResult.post?.slug, "custom-editorial-slug");
+
+  posts.splice(0, 1);
+});
+
 test("listAdminCoverOptions returns curated covers and can filter by keyword", () => {
   const allCovers = listAdminCoverOptions();
   const filteredCovers = listAdminCoverOptions({ q: "架构" });
@@ -184,6 +224,48 @@ test("getAdminPostBySlug returns editable post detail and updateAdminPost can ch
   assert.equal(updateResult.post?.status, "已发布");
   assert.equal(listPosts({ category: "编辑" }).length, 1);
 
+  posts.splice(0, 1);
+});
+
+test("updateAdminPost can change slug and migrate related comments", () => {
+  const createResult = createAdminPost({
+    title: "slug 迁移测试文章",
+    slug: "slug-migration-before",
+    excerpt: "用于验证 slug 更新。",
+    category: "测试",
+    tags: "slug, 迁移",
+    content: "正文内容",
+    status: "published"
+  });
+
+  assert.ok(createResult.post);
+
+  comments.unshift({
+    id: 999,
+    postSlug: "slug-migration-before",
+    author: "测试读者",
+    content: "这条评论应该跟着 slug 一起迁移。",
+    createdAt: "2026-03-30",
+    status: "approved"
+  });
+
+  const updateResult = updateAdminPost("slug-migration-before", {
+    title: "slug 迁移测试文章",
+    slug: "slug-migration-after",
+    excerpt: "用于验证 slug 更新。",
+    category: "测试",
+    tags: "slug, 迁移",
+    coverImage: "",
+    content: "正文内容",
+    status: "published"
+  });
+
+  assert.equal(updateResult.post?.slug, "slug-migration-after");
+  assert.equal(getAdminPostBySlug("slug-migration-after")?.post.slug, "slug-migration-after");
+  assert.equal(listApprovedCommentsByPostSlug("slug-migration-after").length, 1);
+  assert.equal(listApprovedCommentsByPostSlug("slug-migration-before").length, 0);
+
+  comments.splice(0, 1);
   posts.splice(0, 1);
 });
 
