@@ -105,6 +105,54 @@ test("createAdminPost validates fields and stores draft or published posts", () 
   assert.equal(posts.length, beforeCount);
 });
 
+test("createAdminPost and updateAdminPost manage seo fields with fallback and limits", () => {
+  const createResult = createAdminPost({
+    title: "SEO 字段测试文章",
+    excerpt: "用于验证 SEO 字段的默认值。",
+    category: "测试",
+    tags: "seo, 测试",
+    content: "正文内容",
+    status: "draft"
+  });
+
+  assert.equal(posts[0].seoTitle, "SEO 字段测试文章");
+  assert.equal(posts[0].seoDescription, "用于验证 SEO 字段的默认值。");
+
+  const invalidUpdateResult = updateAdminPost(createResult.post.slug, {
+    title: "SEO 字段测试文章",
+    slug: createResult.post.slug,
+    seoTitle: "x".repeat(81),
+    seoDescription: "正常描述",
+    excerpt: "用于验证 SEO 字段的默认值。",
+    category: "测试",
+    tags: "seo, 测试",
+    coverImage: "",
+    content: "正文内容",
+    status: "draft"
+  });
+
+  assert.equal(invalidUpdateResult.error, "SEO 标题不能超过 80 个字符");
+
+  const updateResult = updateAdminPost(createResult.post.slug, {
+    title: "SEO 字段测试文章",
+    slug: createResult.post.slug,
+    seoTitle: "面向搜索摘要的标题",
+    seoDescription: "这是一段专门给搜索结果和分享卡片准备的说明。",
+    excerpt: "用于验证 SEO 字段的默认值。",
+    category: "测试",
+    tags: "seo, 测试",
+    coverImage: "",
+    content: "正文内容",
+    status: "draft"
+  });
+
+  assert.equal(updateResult.post?.title, "SEO 字段测试文章");
+  assert.equal(posts[0].seoTitle, "面向搜索摘要的标题");
+  assert.equal(posts[0].seoDescription, "这是一段专门给搜索结果和分享卡片准备的说明。");
+
+  posts.splice(0, 1);
+});
+
 test("createAdminPost validates custom slug format and uniqueness", () => {
   const invalidSlugResult = createAdminPost({
     title: "自定义 slug 测试文章",

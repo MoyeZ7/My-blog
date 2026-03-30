@@ -39,6 +39,8 @@ test("getPostBySlug returns related posts from the same category", () => {
   const item = getPostBySlug("editorial-layouts-that-do-not-feel-generic");
 
   assert.equal(item?.slug, "editorial-layouts-that-do-not-feel-generic");
+  assert.equal(item?.seoTitle, "如何做出不普通的中文博客首页");
+  assert.equal(item?.seoDescription, "博客首页不能只是卡片堆叠，真正有辨识度的页面要靠节奏、留白、层级和信息密度的控制。");
   assert.equal(item?.relatedPosts.length, 1);
   assert.equal(item?.relatedPosts[0].slug, "building-better-reading-rhythm");
 });
