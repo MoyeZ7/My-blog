@@ -247,6 +247,23 @@
                       新窗口查看
                     </button>
                   </div>
+                  <form id="cover-upload-form" class="cover-upload-form">
+                    <label class="field">
+                      <span>本地上传图片</span>
+                      <input
+                        id="cover-upload-input"
+                        name="coverUpload"
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/gif"
+                      />
+                    </label>
+                    <div class="cover-preview-actions">
+                      <button id="upload-cover-button" class="primary-button" type="submit">
+                        上传并使用
+                      </button>
+                      <p id="cover-upload-message" class="form-message"></p>
+                    </div>
+                  </form>
                 </article>
 
                 <article class="cover-library-card">

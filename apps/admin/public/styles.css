@@ -266,6 +266,12 @@ h2 {
   gap: 0.75rem;
 }
 
+.cover-upload-form {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 0.2rem;
+}
+
 .cover-filter-form {
   display: grid;
   grid-template-columns: 1fr auto;
