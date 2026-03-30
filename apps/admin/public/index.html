@@ -211,6 +211,34 @@
                 </div>
               </div>
 
+              <div class="seo-manager field-wide">
+                <label class="field">
+                  <span>SEO 标题</span>
+                  <input
+                    id="create-seo-title-input"
+                    name="seoTitle"
+                    placeholder="默认会使用文章标题"
+                  />
+                </label>
+
+                <label class="field field-wide">
+                  <span>SEO 描述</span>
+                  <textarea
+                    id="create-seo-description-input"
+                    name="seoDescription"
+                    class="field-textarea field-textarea-short"
+                    placeholder="默认会使用文章摘要"
+                  ></textarea>
+                </label>
+
+                <article class="seo-preview-card field-wide">
+                  <p class="eyebrow">搜索预览</p>
+                  <strong id="seo-preview-title" class="seo-preview-title"></strong>
+                  <span id="seo-preview-url" class="seo-preview-url"></span>
+                  <p id="seo-preview-description" class="muted-text"></p>
+                </article>
+              </div>
+
               <label class="field">
                 <span>分类</span>
                 <input id="create-category-input" name="category" placeholder="例如：设计" />
