@@ -6,6 +6,7 @@
 
 - 中文首页与文章详情页
 - 搜索、分类、标签、站点统计
+- 首页文章分页与按月份归档
 - 首页品牌文案与说明区配置驱动
 - 文章详情阅读信息与相关文章
 - 文章详情页品牌名称配置驱动
@@ -29,6 +30,7 @@ http://localhost:3000
 ## 当前依赖的接口
 
 - `GET /api/posts`
+- `GET /api/archives`
 - `GET /api/posts/:slug`
 - `GET /api/posts/:slug/comments`
 - `POST /api/posts/:slug/comments`
