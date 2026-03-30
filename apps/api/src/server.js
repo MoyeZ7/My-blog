@@ -38,6 +38,7 @@ import {
   shouldUseMySqlStorage
 } from "./mysql-store.js";
 import { sendJson, sendNotFound } from "./response.js";
+import { getUploadedAsset, saveUploadedImage } from "./upload-service.js";
 
 const port = Number(process.env.PORT ?? 3001);
 
@@ -59,6 +60,20 @@ async function persistExternalStorage() {
   }
 
   await persistContentSnapshotToMySql(getContentSnapshot());
+}
+
+function buildRequestOrigin(request) {
+  const host = request.headers.host ?? `localhost:${port}`;
+  return `http://${host}`;
+}
+
+function sendBinary(response, statusCode, mimeType, buffer) {
+  response.writeHead(statusCode, {
+    "Access-Control-Allow-Origin": "*",
+    "Cache-Control": "public, max-age=3600",
+    "Content-Type": mimeType
+  });
+  response.end(buffer);
 }
 
 function readJsonBody(request) {
@@ -280,6 +295,46 @@ async function handlePostRequest(pathname, request, response) {
     return;
   }
 
+  if (pathname === "/api/admin/uploads") {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    let payload;
+
+    try {
+      payload = await readJsonBody(request);
+    } catch (error) {
+      sendJson(response, 400, {
+        message: "Invalid JSON body"
+      });
+      return;
+    }
+
+    const result = await saveUploadedImage(payload);
+
+    if (result.error) {
+      sendJson(response, 400, {
+        message: result.error
+      });
+      return;
+    }
+
+    sendJson(response, 201, {
+      session: {
+        username: session.username,
+        displayName: session.displayName
+      },
+      asset: {
+        ...result.asset,
+        url: new URL(result.asset.url, buildRequestOrigin(request)).toString()
+      }
+    });
+    return;
+  }
+
   sendNotFound(response);
 }
 
@@ -431,6 +486,19 @@ const server = http.createServer(async (request, response) => {
 
   const adminPostMatch = url.pathname.match(/^\/api\/admin\/posts\/([a-z0-9-]+)$/);
   const adminCommentMatch = url.pathname.match(/^\/api\/admin\/comments\/(\d+)$/);
+  const uploadMatch = url.pathname.match(/^\/uploads\/([a-zA-Z0-9-]+\.(jpg|jpeg|png|webp|gif))$/);
+
+  if (request.method === "GET" && uploadMatch) {
+    const asset = getUploadedAsset(uploadMatch[1]);
+
+    if (!asset) {
+      sendNotFound(response);
+      return;
+    }
+
+    sendBinary(response, 200, asset.mimeType, asset.buffer);
+    return;
+  }
 
   if (request.method === "GET" && adminPostMatch) {
     const session = getAuthorizedAdminSession(request, response);

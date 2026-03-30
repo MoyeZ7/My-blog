@@ -8,6 +8,7 @@ import {
   siteConfig
 } from "../../../packages/content/src/content-store.js";
 import { listPosts } from "./blog-service.js";
+import { listUploadedImages } from "./upload-service.js";
 
 const sessions = new Map();
 const adminCredentials = {
@@ -353,6 +354,13 @@ export function listAdminCoverOptions(filters = {}) {
     if (!coverMap.has(coverImage)) {
       coverMap.set(coverImage, createCoverItemFromPost(post, usageMap));
     }
+  }
+
+  for (const item of listUploadedImages()) {
+    coverMap.set(item.url, {
+      ...item,
+      usageCount: usageMap.get(item.url) ?? item.usageCount
+    });
   }
 
   const items = [...coverMap.values()]
