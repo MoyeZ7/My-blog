@@ -6,6 +6,7 @@ import {
   deleteAdminPost,
   deleteAdminTag,
   getAdminSiteConfig,
+  listAdminCoverOptions,
   listAdminCategories,
   listAdminComments,
   getAdminPostBySlug,
@@ -405,6 +406,25 @@ const server = http.createServer(async (request, response) => {
         displayName: session.displayName
       },
       ...getAdminSiteConfig()
+    });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/admin/covers") {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    sendJson(response, 200, {
+      session: {
+        username: session.username,
+        displayName: session.displayName
+      },
+      ...listAdminCoverOptions({
+        q: url.searchParams.get("q")
+      })
     });
     return;
   }

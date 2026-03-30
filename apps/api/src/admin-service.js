@@ -17,6 +17,56 @@ const adminCredentials = {
 };
 const defaultCoverImage =
   "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80";
+const curatedCoverLibrary = [
+  {
+    id: "default-cover",
+    title: "系统默认封面",
+    url: defaultCoverImage,
+    description: "适合后台和产品类文章的通用封面。",
+    source: "系统默认",
+    isDefault: true
+  },
+  {
+    id: "reading-rhythm",
+    title: "阅读节奏",
+    url: "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=80",
+    description: "适合阅读体验、内容策略和首页编排相关主题。",
+    source: "内置封面",
+    isDefault: false
+  },
+  {
+    id: "editorial-layout",
+    title: "编辑排版",
+    url: "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=1200&q=80",
+    description: "适合设计、排版和前端表现层内容。",
+    source: "内置封面",
+    isDefault: false
+  },
+  {
+    id: "architecture-notes",
+    title: "结构与架构",
+    url: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1200&q=80",
+    description: "适合架构、重构和系统设计类文章。",
+    source: "内置封面",
+    isDefault: false
+  },
+  {
+    id: "ops-and-workflow",
+    title: "流程与后台",
+    url: "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1200&q=80",
+    description: "适合后台工作流、审核与运营流程。",
+    source: "内置封面",
+    isDefault: false
+  },
+  {
+    id: "library-desk",
+    title: "书桌与资料",
+    url: "https://images.unsplash.com/photo-1491841550275-ad7854e35ca6?auto=format&fit=crop&w=1200&q=80",
+    description: "适合复盘、资料整理和经验总结类内容。",
+    source: "内置封面",
+    isDefault: false
+  }
+];
 
 function normalize(value) {
   return value?.trim() ?? "";
@@ -24,6 +74,26 @@ function normalize(value) {
 
 function normalizeStatus(status) {
   return status === "draft" ? "draft" : "published";
+}
+
+function normalizeCoverImage(value) {
+  const normalizedValue = normalize(value);
+
+  if (!normalizedValue) {
+    return {
+      value: defaultCoverImage
+    };
+  }
+
+  if (!/^https?:\/\//i.test(normalizedValue)) {
+    return {
+      error: "封面图地址无效，请使用 http 或 https 链接"
+    };
+  }
+
+  return {
+    value: normalizedValue
+  };
 }
 
 function formatAdminSiteConfig() {
@@ -185,6 +255,30 @@ function collectAdminTags() {
     .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name, "zh-Hans-CN"));
 }
 
+function collectCoverUsage() {
+  const usageMap = new Map();
+
+  for (const post of posts) {
+    const coverImage = post.coverImage || defaultCoverImage;
+    const current = usageMap.get(coverImage) ?? 0;
+    usageMap.set(coverImage, current + 1);
+  }
+
+  return usageMap;
+}
+
+function createCoverItemFromPost(post, usageMap) {
+  return {
+    id: `post-cover-${post.id}`,
+    title: `来自文章：${post.title}`,
+    url: post.coverImage || defaultCoverImage,
+    description: `${post.category} · 已在文章列表中使用`,
+    source: "文章已用",
+    usageCount: usageMap.get(post.coverImage || defaultCoverImage) ?? 0,
+    isDefault: (post.coverImage || defaultCoverImage) === defaultCoverImage
+  };
+}
+
 function getAdminStats() {
   return {
     postCount: posts.length,
@@ -234,6 +328,58 @@ export function getAdminDashboardSummary() {
 export function getAdminSiteConfig() {
   return {
     config: formatAdminSiteConfig()
+  };
+}
+
+export function getDefaultCoverImage() {
+  return defaultCoverImage;
+}
+
+export function listAdminCoverOptions(filters = {}) {
+  const keyword = normalize(filters.q).toLowerCase();
+  const usageMap = collectCoverUsage();
+  const coverMap = new Map();
+
+  for (const item of curatedCoverLibrary) {
+    coverMap.set(item.url, {
+      ...item,
+      usageCount: usageMap.get(item.url) ?? 0
+    });
+  }
+
+  for (const post of posts) {
+    const coverImage = post.coverImage || defaultCoverImage;
+
+    if (!coverMap.has(coverImage)) {
+      coverMap.set(coverImage, createCoverItemFromPost(post, usageMap));
+    }
+  }
+
+  const items = [...coverMap.values()]
+    .filter((item) => {
+      if (!keyword) {
+        return true;
+      }
+
+      const searchTarget = [item.title, item.description, item.source, item.url].join(" ").toLowerCase();
+      return searchTarget.includes(keyword);
+    })
+    .sort((left, right) => {
+      if (left.isDefault !== right.isDefault) {
+        return left.isDefault ? -1 : 1;
+      }
+
+      if (left.usageCount !== right.usageCount) {
+        return right.usageCount - left.usageCount;
+      }
+
+      return left.title.localeCompare(right.title, "zh-Hans-CN");
+    });
+
+  return {
+    items,
+    total: items.length,
+    defaultCoverImage
   };
 }
 
@@ -320,7 +466,7 @@ export function createAdminPost(input) {
   const title = normalize(input.title);
   const excerpt = normalize(input.excerpt);
   const category = normalize(input.category);
-  const coverImage = normalize(input.coverImage) || defaultCoverImage;
+  const coverImage = normalizeCoverImage(input.coverImage);
   const tags = parseTags(input.tags);
   const content = parseContent(input.content);
   const status = normalizeStatus(input.status);
@@ -355,6 +501,12 @@ export function createAdminPost(input) {
     };
   }
 
+  if (coverImage.error) {
+    return {
+      error: coverImage.error
+    };
+  }
+
   const slug = normalize(input.slug) || slugify(title);
 
   if (posts.some((post) => post.slug === slug)) {
@@ -374,7 +526,7 @@ export function createAdminPost(input) {
     content,
     category,
     tags,
-    coverImage,
+    coverImage: coverImage.value,
     publishedAt: status === "published" ? today : null,
     updatedAt: today,
     status
@@ -400,7 +552,7 @@ export function updateAdminPost(slug, input) {
   const title = normalize(input.title);
   const excerpt = normalize(input.excerpt);
   const category = normalize(input.category);
-  const coverImage = normalize(input.coverImage) || defaultCoverImage;
+  const coverImage = normalizeCoverImage(input.coverImage);
   const tags = parseTags(input.tags);
   const content = parseContent(input.content);
   const status = normalizeStatus(input.status);
@@ -435,11 +587,17 @@ export function updateAdminPost(slug, input) {
     };
   }
 
+  if (coverImage.error) {
+    return {
+      error: coverImage.error
+    };
+  }
+
   const today = new Date().toISOString().slice(0, 10);
   post.title = title;
   post.excerpt = excerpt;
   post.category = category;
-  post.coverImage = coverImage;
+  post.coverImage = coverImage.value;
   post.tags = tags;
   post.content = content;
   post.status = status;
