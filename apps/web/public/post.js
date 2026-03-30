@@ -65,12 +65,29 @@ function setCommentMessage(message, isError = false) {
   node.classList.toggle("is-error", isError);
 }
 
+function setDocumentMeta({ title, description }) {
+  document.title = title;
+
+  let descriptionMeta = document.querySelector('meta[name="description"]');
+
+  if (!descriptionMeta) {
+    descriptionMeta = document.createElement("meta");
+    descriptionMeta.name = "description";
+    document.head.append(descriptionMeta);
+  }
+
+  descriptionMeta.content = description;
+}
+
 function renderSiteBrand(config) {
-  document.title = `${config.brandName} | 文章详情`;
   document.querySelector("#site-brand").textContent = config.brandName;
 }
 
-function renderPost(post) {
+function renderPost(post, config) {
+  setDocumentMeta({
+    title: `${post.seoTitle} | ${config.brandName}`,
+    description: post.seoDescription
+  });
   document.querySelector("#post-title").textContent = post.title;
   document.querySelector("#post-category").textContent = post.category;
   document.querySelector("#post-date").textContent = formatDate(post.publishedAt);
@@ -166,6 +183,10 @@ function bindCommentForm(slug) {
 }
 
 function renderError(message) {
+  setDocumentMeta({
+    title: "文章暂时不可用 | 我的博客",
+    description: "当前文章暂时无法加载，请稍后再试。"
+  });
   document.querySelector("#post-title").textContent = "文章暂时不可用";
   document.querySelector("#post-content").textContent = message;
   document.querySelector("#comment-summary").textContent = "评论暂时不可用";
@@ -189,7 +210,7 @@ async function bootstrap() {
       fetchSiteConfig()
     ]);
     renderSiteBrand(config);
-    renderPost(post);
+    renderPost(post, config);
     renderComments(comments);
     bindCommentForm(slug);
   } catch (error) {
