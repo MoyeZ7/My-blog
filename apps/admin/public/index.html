@@ -231,11 +231,42 @@
                   ></textarea>
                 </label>
 
+                <div class="seo-meta-grid field-wide">
+                  <label class="field">
+                    <span>Canonical 地址</span>
+                    <input
+                      id="create-canonical-url-input"
+                      name="canonicalUrl"
+                      placeholder="可选，填写规范地址"
+                    />
+                  </label>
+
+                  <label class="field">
+                    <span>OG 图片地址</span>
+                    <input
+                      id="create-og-image-input"
+                      name="ogImage"
+                      placeholder="可选，默认沿用文章封面"
+                    />
+                  </label>
+                </div>
+
+                <label class="field field-wide">
+                  <span>SEO 关键词</span>
+                  <input
+                    id="create-meta-keywords-input"
+                    name="metaKeywords"
+                    placeholder="多个关键词用逗号分隔，默认沿用文章标签"
+                  />
+                </label>
+
                 <article class="seo-preview-card field-wide">
                   <p class="eyebrow">搜索预览</p>
                   <strong id="seo-preview-title" class="seo-preview-title"></strong>
                   <span id="seo-preview-url" class="seo-preview-url"></span>
                   <p id="seo-preview-description" class="muted-text"></p>
+                  <p id="seo-preview-keywords" class="muted-text"></p>
+                  <p id="seo-preview-og-image" class="muted-text"></p>
                 </article>
               </div>
 
