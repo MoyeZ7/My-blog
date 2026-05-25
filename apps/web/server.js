@@ -27,6 +27,10 @@ function resolvePathname(pathname) {
     return "/archive.html";
   }
 
+  if (pathname === "/category" || pathname === "/tag") {
+    return "/topic.html";
+  }
+
   return pathname;
 }
 
