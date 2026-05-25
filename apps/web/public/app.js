@@ -242,21 +242,20 @@ function renderPosts(items) {
       image.alt = item.title;
       pinBadge.classList.toggle("is-hidden", item.isPinned !== true);
       category.textContent = item.category;
+      category.href = `/category?name=${encodeURIComponent(item.category)}`;
       date.textContent = formatDate(item.publishedAt);
       readingTime.textContent = `${item.readingTimeMinutes} 分钟阅读`;
       title.textContent = item.title;
       excerpt.textContent = item.excerpt;
       link.href = `/post?slug=${encodeURIComponent(item.slug)}`;
       tags.replaceChildren(
-        ...item.tags.map((tagName) =>
-          createFilterChip(`# ${tagName}`, () => {
-            state.page = 1;
-            state.tag = tagName;
-            loadPosts();
-            renderActiveFilters();
-            void bootstrapSidebar();
-          }, "is-soft")
-        )
+        ...item.tags.map((tagName) => {
+          const linkNode = document.createElement("a");
+          linkNode.className = "filter-chip is-soft";
+          linkNode.href = `/tag?name=${encodeURIComponent(tagName)}`;
+          linkNode.textContent = `# ${tagName}`;
+          return linkNode;
+        })
       );
 
       return fragment;

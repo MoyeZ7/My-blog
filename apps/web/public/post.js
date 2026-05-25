@@ -124,7 +124,9 @@ function renderPost(post, config) {
     url: currentUrl
   });
   document.querySelector("#post-title").textContent = post.title;
-  document.querySelector("#post-category").textContent = post.category;
+  const categoryLink = document.querySelector("#post-category");
+  categoryLink.textContent = post.category;
+  categoryLink.href = `/category?name=${encodeURIComponent(post.category)}`;
   document.querySelector("#post-date").textContent = formatDate(post.publishedAt);
   document.querySelector("#post-reading-time").textContent = `${post.readingTimeMinutes} 分钟阅读`;
 
@@ -135,8 +137,9 @@ function renderPost(post, config) {
   const tags = document.querySelector("#post-tags");
   tags.replaceChildren(
     ...post.tags.map((tag) => {
-      const node = document.createElement("span");
-      node.className = "inline-tag";
+      const node = document.createElement("a");
+      node.className = "filter-chip is-soft";
+      node.href = `/tag?name=${encodeURIComponent(tag)}`;
       node.textContent = `# ${tag}`;
       return node;
     })

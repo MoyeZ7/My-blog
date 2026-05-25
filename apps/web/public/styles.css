@@ -320,6 +320,7 @@ input {
 }
 
 .text-link,
+.meta-link,
 .filter-chip,
 .related-link {
   transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
@@ -333,7 +334,13 @@ input {
   font-weight: 600;
 }
 
+.meta-link {
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .text-link:hover,
+.meta-link:hover,
 .related-link:hover {
   transform: translateX(4px);
 }

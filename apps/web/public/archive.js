@@ -125,6 +125,7 @@ function renderPosts(items) {
     ...items.map((item) => {
       const fragment = template.content.cloneNode(true);
       const image = fragment.querySelector(".post-card-image");
+      const pinBadge = fragment.querySelector('[data-role="pin-badge"]');
       const category = fragment.querySelector('[data-role="category"]');
       const date = fragment.querySelector('[data-role="date"]');
       const readingTime = fragment.querySelector('[data-role="reading-time"]');
@@ -135,7 +136,9 @@ function renderPosts(items) {
 
       image.src = item.coverImage;
       image.alt = item.title;
+      pinBadge.classList.toggle("is-hidden", item.isPinned !== true);
       category.textContent = item.category;
+      category.href = `/category?name=${encodeURIComponent(item.category)}`;
       date.textContent = formatDate(item.publishedAt);
       readingTime.textContent = `${item.readingTimeMinutes} 分钟阅读`;
       title.textContent = item.title;
@@ -143,8 +146,9 @@ function renderPosts(items) {
       link.href = `/post?slug=${encodeURIComponent(item.slug)}`;
       tags.replaceChildren(
         ...item.tags.map((tagName) => {
-          const node = document.createElement("span");
-          node.className = "inline-tag";
+          const node = document.createElement("a");
+          node.className = "filter-chip is-soft";
+          node.href = `/tag?name=${encodeURIComponent(tagName)}`;
           node.textContent = `# ${tagName}`;
           return node;
         })
