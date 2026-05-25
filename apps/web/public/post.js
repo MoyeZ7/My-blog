@@ -65,18 +65,48 @@ function setCommentMessage(message, isError = false) {
   node.classList.toggle("is-error", isError);
 }
 
-function setDocumentMeta({ title, description }) {
-  document.title = title;
+function upsertMeta(selector, attributes, content) {
+  let node = document.head.querySelector(selector);
 
-  let descriptionMeta = document.querySelector('meta[name="description"]');
+  if (!node) {
+    node = document.createElement("meta");
 
-  if (!descriptionMeta) {
-    descriptionMeta = document.createElement("meta");
-    descriptionMeta.name = "description";
-    document.head.append(descriptionMeta);
+    for (const [key, value] of Object.entries(attributes)) {
+      node.setAttribute(key, value);
+    }
+
+    document.head.append(node);
   }
 
-  descriptionMeta.content = description;
+  node.setAttribute("content", content);
+}
+
+function upsertLink(selector, rel, href) {
+  let node = document.head.querySelector(selector);
+
+  if (!node) {
+    node = document.createElement("link");
+    node.rel = rel;
+    document.head.append(node);
+  }
+
+  node.href = href;
+}
+
+function setDocumentMeta({ title, description, keywords, canonicalUrl, ogImage, url }) {
+  document.title = title;
+  upsertMeta('meta[name="description"]', { name: "description" }, description);
+  upsertMeta('meta[name="keywords"]', { name: "keywords" }, keywords);
+  upsertMeta('meta[property="og:title"]', { property: "og:title" }, title);
+  upsertMeta('meta[property="og:description"]', { property: "og:description" }, description);
+  upsertMeta('meta[property="og:type"]', { property: "og:type" }, "article");
+  upsertMeta('meta[property="og:image"]', { property: "og:image" }, ogImage);
+  upsertMeta('meta[property="og:url"]', { property: "og:url" }, canonicalUrl || url);
+  upsertMeta('meta[name="twitter:card"]', { name: "twitter:card" }, "summary_large_image");
+  upsertMeta('meta[name="twitter:title"]', { name: "twitter:title" }, title);
+  upsertMeta('meta[name="twitter:description"]', { name: "twitter:description" }, description);
+  upsertMeta('meta[name="twitter:image"]', { name: "twitter:image" }, ogImage);
+  upsertLink('link[rel="canonical"]', "canonical", canonicalUrl || url);
 }
 
 function renderSiteBrand(config) {
@@ -84,9 +114,14 @@ function renderSiteBrand(config) {
 }
 
 function renderPost(post, config) {
+  const currentUrl = window.location.href;
   setDocumentMeta({
     title: `${post.seoTitle} | ${config.brandName}`,
-    description: post.seoDescription
+    description: post.seoDescription,
+    keywords: (post.metaKeywords ?? []).join(", "),
+    canonicalUrl: post.canonicalUrl,
+    ogImage: post.ogImage ?? post.coverImage,
+    url: currentUrl
   });
   document.querySelector("#post-title").textContent = post.title;
   document.querySelector("#post-category").textContent = post.category;
@@ -185,7 +220,11 @@ function bindCommentForm(slug) {
 function renderError(message) {
   setDocumentMeta({
     title: "文章暂时不可用 | 我的博客",
-    description: "当前文章暂时无法加载，请稍后再试。"
+    description: "当前文章暂时无法加载，请稍后再试。",
+    keywords: "博客, 文章",
+    canonicalUrl: "",
+    ogImage: "",
+    url: window.location.href
   });
   document.querySelector("#post-title").textContent = "文章暂时不可用";
   document.querySelector("#post-content").textContent = message;
