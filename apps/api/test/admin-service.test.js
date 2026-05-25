@@ -125,6 +125,7 @@ test("createAdminPost and updateAdminPost manage seo fields with fallback and li
 
   assert.equal(posts[0].seoTitle, "SEO 字段测试文章");
   assert.equal(posts[0].seoDescription, "用于验证 SEO 字段的默认值。");
+  assert.deepEqual(posts[0].metaKeywords, ["seo", "测试"]);
 
   const invalidUpdateResult = updateAdminPost(createResult.post.slug, {
     title: "SEO 字段测试文章",
@@ -157,6 +158,61 @@ test("createAdminPost and updateAdminPost manage seo fields with fallback and li
   assert.equal(updateResult.post?.title, "SEO 字段测试文章");
   assert.equal(posts[0].seoTitle, "面向搜索摘要的标题");
   assert.equal(posts[0].seoDescription, "这是一段专门给搜索结果和分享卡片准备的说明。");
+  assert.deepEqual(posts[0].metaKeywords, ["seo", "测试"]);
+
+  posts.splice(0, 1);
+});
+
+test("createAdminPost and updateAdminPost manage seo extension fields", () => {
+  const createResult = createAdminPost({
+    title: "SEO 扩展字段文章",
+    excerpt: "用于验证 canonical、OG 图和关键词。",
+    category: "测试",
+    tags: "SEO, 分享",
+    content: "正文内容",
+    canonicalUrl: "https://blog.example.com/posts/seo-extension",
+    ogImage: "https://cdn.example.com/og-images/seo-extension.jpg",
+    metaKeywords: "SEO, 分享, 博客",
+    status: "published"
+  });
+
+  assert.equal(posts[0].canonicalUrl, "https://blog.example.com/posts/seo-extension");
+  assert.equal(posts[0].ogImage, "https://cdn.example.com/og-images/seo-extension.jpg");
+  assert.deepEqual(posts[0].metaKeywords, ["SEO", "分享", "博客"]);
+
+  const invalidUpdateResult = updateAdminPost(createResult.post.slug, {
+    title: "SEO 扩展字段文章",
+    slug: createResult.post.slug,
+    excerpt: "用于验证 canonical、OG 图和关键词。",
+    category: "测试",
+    tags: "SEO, 分享",
+    content: "正文内容",
+    canonicalUrl: "invalid-url",
+    ogImage: "",
+    metaKeywords: "a,b,c,d,e,f,g,h,i,j,k,l,m",
+    status: "published"
+  });
+
+  assert.equal(invalidUpdateResult.error, "Canonical 地址无效，请使用 http 或 https 链接");
+
+  const updateResult = updateAdminPost(createResult.post.slug, {
+    title: "SEO 扩展字段文章",
+    slug: createResult.post.slug,
+    excerpt: "用于验证 canonical、OG 图和关键词。",
+    category: "测试",
+    tags: "SEO, 分享",
+    content: "正文内容",
+    canonicalUrl: "",
+    ogImage: "",
+    metaKeywords: "",
+    coverImage: "https://cdn.example.com/covers/seo-extension-cover.jpg",
+    status: "published"
+  });
+
+  assert.equal(updateResult.post?.title, "SEO 扩展字段文章");
+  assert.equal(posts[0].canonicalUrl, "");
+  assert.equal(posts[0].ogImage, "https://cdn.example.com/covers/seo-extension-cover.jpg");
+  assert.deepEqual(posts[0].metaKeywords, ["SEO", "分享"]);
 
   posts.splice(0, 1);
 });

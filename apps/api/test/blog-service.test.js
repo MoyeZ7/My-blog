@@ -46,6 +46,9 @@ test("listPosts can filter by category", () => {
 test("getPostBySlug returns related posts from the same category", () => {
   posts[1].isPinned = true;
   posts[1].sortOrder = 8;
+  posts[1].canonicalUrl = "https://blog.example.com/posts/editorial-layouts";
+  posts[1].ogImage = "https://cdn.example.com/og/editorial-layouts.jpg";
+  posts[1].metaKeywords = ["界面", "排版", "中文博客"];
   const item = getPostBySlug("editorial-layouts-that-do-not-feel-generic");
 
   assert.equal(item?.slug, "editorial-layouts-that-do-not-feel-generic");
@@ -53,11 +56,17 @@ test("getPostBySlug returns related posts from the same category", () => {
   assert.equal(item?.sortOrder, 8);
   assert.equal(item?.seoTitle, "如何做出不普通的中文博客首页");
   assert.equal(item?.seoDescription, "博客首页不能只是卡片堆叠，真正有辨识度的页面要靠节奏、留白、层级和信息密度的控制。");
+  assert.equal(item?.canonicalUrl, "https://blog.example.com/posts/editorial-layouts");
+  assert.equal(item?.ogImage, "https://cdn.example.com/og/editorial-layouts.jpg");
+  assert.deepEqual(item?.metaKeywords, ["界面", "排版", "中文博客"]);
   assert.equal(item?.relatedPosts.length, 1);
   assert.equal(item?.relatedPosts[0].slug, "building-better-reading-rhythm");
 
   delete posts[1].isPinned;
   delete posts[1].sortOrder;
+  delete posts[1].canonicalUrl;
+  delete posts[1].ogImage;
+  delete posts[1].metaKeywords;
 });
 
 test("listCategories returns counts", () => {
