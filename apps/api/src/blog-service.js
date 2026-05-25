@@ -198,6 +198,9 @@ export function getPostBySlug(slug) {
     sortOrder: getPostSortOrder(post),
     seoTitle: post.seoTitle ?? post.title,
     seoDescription: post.seoDescription ?? post.excerpt,
+    canonicalUrl: post.canonicalUrl ?? "",
+    ogImage: post.ogImage ?? post.coverImage,
+    metaKeywords: post.metaKeywords ?? post.tags,
     readingTimeMinutes: estimateReadingTime(post.content),
     relatedPosts: listPosts({ category: post.category })
       .filter((item) => item.slug !== post.slug)

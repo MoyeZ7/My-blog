@@ -97,6 +97,26 @@ function normalizeCoverImage(value) {
   };
 }
 
+function normalizeOptionalHttpUrl(value, fieldName) {
+  const normalizedValue = normalize(value);
+
+  if (!normalizedValue) {
+    return {
+      value: ""
+    };
+  }
+
+  if (!/^https?:\/\//i.test(normalizedValue)) {
+    return {
+      error: `${fieldName}无效，请使用 http 或 https 链接`
+    };
+  }
+
+  return {
+    value: normalizedValue
+  };
+}
+
 function formatAdminSiteConfig() {
   return {
     brandName: siteConfig.brandName,
@@ -175,6 +195,15 @@ function parseContent(value) {
     .filter(Boolean);
 }
 
+function parseMetaKeywords(value) {
+  return [...new Set(
+    String(value ?? "")
+      .split(/[,\n，]/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+  )];
+}
+
 function normalizeSeoTitle(value, fallbackTitle) {
   const seoTitle = normalize(value) || fallbackTitle;
 
@@ -229,6 +258,21 @@ function normalizePinned(value) {
   return value === true || value === "true" || value === "on" || value === 1 || value === "1";
 }
 
+function normalizeMetaKeywords(value, fallbackKeywords) {
+  const keywords = parseMetaKeywords(value);
+  const result = keywords.length ? keywords : fallbackKeywords;
+
+  if (result.length > 12) {
+    return {
+      error: "SEO 关键词不能超过 12 个"
+    };
+  }
+
+  return {
+    value: result
+  };
+}
+
 function formatAdminPost(post) {
   const status = normalizeStatus(post.status);
   const activityDate = post.updatedAt ?? post.publishedAt ?? new Date().toISOString().slice(0, 10);
@@ -259,6 +303,9 @@ function formatAdminEditorPost(post) {
     sortOrder: Number.parseInt(String(post.sortOrder ?? 0), 10) || 0,
     seoTitle: post.seoTitle ?? post.title,
     seoDescription: post.seoDescription ?? post.excerpt,
+    canonicalUrl: post.canonicalUrl ?? "",
+    ogImage: post.ogImage ?? post.coverImage,
+    metaKeywords: (post.metaKeywords ?? post.tags).join(", "),
     excerpt: post.excerpt,
     category: post.category,
     tags: post.tags.join(", "),
@@ -583,9 +630,12 @@ export function createAdminPost(input) {
   const coverImage = normalizeCoverImage(input.coverImage);
   const seoTitle = normalizeSeoTitle(input.seoTitle, title);
   const seoDescription = normalizeSeoDescription(input.seoDescription, excerpt);
+  const canonicalUrl = normalizeOptionalHttpUrl(input.canonicalUrl, "Canonical 地址");
+  const ogImageInput = normalizeOptionalHttpUrl(input.ogImage, "OG 图片地址");
   const sortOrder = normalizeSortOrder(input.sortOrder);
   const isPinned = normalizePinned(input.isPinned);
   const tags = parseTags(input.tags);
+  const metaKeywords = normalizeMetaKeywords(input.metaKeywords, tags);
   const content = parseContent(input.content);
   const status = normalizeStatus(input.status);
 
@@ -634,6 +684,24 @@ export function createAdminPost(input) {
   if (sortOrder.error) {
     return {
       error: sortOrder.error
+    };
+  }
+
+  if (canonicalUrl.error) {
+    return {
+      error: canonicalUrl.error
+    };
+  }
+
+  if (ogImageInput.error) {
+    return {
+      error: ogImageInput.error
+    };
+  }
+
+  if (metaKeywords.error) {
+    return {
+      error: metaKeywords.error
     };
   }
 
@@ -670,6 +738,9 @@ export function createAdminPost(input) {
     sortOrder: sortOrder.value,
     seoTitle: seoTitle.value,
     seoDescription: seoDescription.value,
+    canonicalUrl: canonicalUrl.value,
+    ogImage: ogImageInput.value || coverImage.value,
+    metaKeywords: metaKeywords.value,
     excerpt,
     content,
     category,
@@ -703,9 +774,12 @@ export function updateAdminPost(slug, input) {
   const coverImage = normalizeCoverImage(input.coverImage);
   const seoTitle = normalizeSeoTitle(input.seoTitle, title);
   const seoDescription = normalizeSeoDescription(input.seoDescription, excerpt);
+  const canonicalUrl = normalizeOptionalHttpUrl(input.canonicalUrl, "Canonical 地址");
+  const ogImageInput = normalizeOptionalHttpUrl(input.ogImage, "OG 图片地址");
   const sortOrder = normalizeSortOrder(input.sortOrder);
   const isPinned = normalizePinned(input.isPinned);
   const tags = parseTags(input.tags);
+  const metaKeywords = normalizeMetaKeywords(input.metaKeywords, tags);
   const content = parseContent(input.content);
   const status = normalizeStatus(input.status);
 
@@ -757,6 +831,24 @@ export function updateAdminPost(slug, input) {
     };
   }
 
+  if (canonicalUrl.error) {
+    return {
+      error: canonicalUrl.error
+    };
+  }
+
+  if (ogImageInput.error) {
+    return {
+      error: ogImageInput.error
+    };
+  }
+
+  if (metaKeywords.error) {
+    return {
+      error: metaKeywords.error
+    };
+  }
+
   if (coverImage.error) {
     return {
       error: coverImage.error
@@ -786,6 +878,9 @@ export function updateAdminPost(slug, input) {
   post.sortOrder = sortOrder.value;
   post.seoTitle = seoTitle.value;
   post.seoDescription = seoDescription.value;
+  post.canonicalUrl = canonicalUrl.value;
+  post.ogImage = ogImageInput.value || coverImage.value;
+  post.metaKeywords = metaKeywords.value;
   post.slug = nextSlug;
   post.excerpt = excerpt;
   post.category = category;
