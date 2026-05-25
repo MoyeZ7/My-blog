@@ -19,12 +19,34 @@ function getPostStatus(post) {
   return post.status ?? "published";
 }
 
+function getPostSortOrder(post) {
+  const value = Number.parseInt(String(post.sortOrder ?? 0), 10);
+
+  if (Number.isNaN(value)) {
+    return 0;
+  }
+
+  return value;
+}
+
+function isPinnedPost(post) {
+  return post.isPinned === true;
+}
+
 function getPublishedPosts() {
   return posts.filter((post) => getPostStatus(post) === "published");
 }
 
-function sortByPublishedDate(items) {
+function sortPostsForPublicFeed(items) {
   return [...items].sort((left, right) => {
+    if (isPinnedPost(left) !== isPinnedPost(right)) {
+      return Number(isPinnedPost(right)) - Number(isPinnedPost(left));
+    }
+
+    if (getPostSortOrder(left) !== getPostSortOrder(right)) {
+      return getPostSortOrder(right) - getPostSortOrder(left);
+    }
+
     return new Date(right.publishedAt) - new Date(left.publishedAt);
   });
 }
@@ -43,6 +65,8 @@ function toPostPreview(post) {
     id: post.id,
     slug: post.slug,
     title: post.title,
+    isPinned: isPinnedPost(post),
+    sortOrder: getPostSortOrder(post),
     excerpt: post.excerpt,
     category: post.category,
     tags: post.tags,
@@ -112,7 +136,7 @@ function getFilteredPublishedPosts(filters = {}) {
 export function listPosts(filters = {}) {
   const filteredPosts = getFilteredPublishedPosts(filters);
 
-  return sortByPublishedDate(filteredPosts).map(toPostPreview);
+  return sortPostsForPublicFeed(filteredPosts).map(toPostPreview);
 }
 
 export function listPaginatedPosts(filters = {}) {
@@ -170,6 +194,8 @@ export function getPostBySlug(slug) {
 
   return {
     ...post,
+    isPinned: isPinnedPost(post),
+    sortOrder: getPostSortOrder(post),
     seoTitle: post.seoTitle ?? post.title,
     seoDescription: post.seoDescription ?? post.excerpt,
     readingTimeMinutes: estimateReadingTime(post.content),

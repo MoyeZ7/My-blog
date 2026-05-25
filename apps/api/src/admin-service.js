@@ -203,6 +203,32 @@ function normalizeSeoDescription(value, fallbackExcerpt) {
   };
 }
 
+function normalizeSortOrder(value) {
+  const normalizedValue = String(value ?? "").trim();
+
+  if (!normalizedValue) {
+    return {
+      value: 0
+    };
+  }
+
+  const parsed = Number.parseInt(normalizedValue, 10);
+
+  if (Number.isNaN(parsed) || parsed < 0 || parsed > 999) {
+    return {
+      error: "排序值必须是 0 到 999 之间的整数"
+    };
+  }
+
+  return {
+    value: parsed
+  };
+}
+
+function normalizePinned(value) {
+  return value === true || value === "true" || value === "on" || value === 1 || value === "1";
+}
+
 function formatAdminPost(post) {
   const status = normalizeStatus(post.status);
   const activityDate = post.updatedAt ?? post.publishedAt ?? new Date().toISOString().slice(0, 10);
@@ -211,6 +237,8 @@ function formatAdminPost(post) {
     id: post.id,
     slug: post.slug,
     title: post.title,
+    isPinned: post.isPinned === true,
+    sortOrder: Number.parseInt(String(post.sortOrder ?? 0), 10) || 0,
     excerpt: post.excerpt,
     category: post.category,
     tags: post.tags,
@@ -227,6 +255,8 @@ function formatAdminEditorPost(post) {
     id: post.id,
     slug: post.slug,
     title: post.title,
+    isPinned: post.isPinned === true,
+    sortOrder: Number.parseInt(String(post.sortOrder ?? 0), 10) || 0,
     seoTitle: post.seoTitle ?? post.title,
     seoDescription: post.seoDescription ?? post.excerpt,
     excerpt: post.excerpt,
@@ -511,6 +541,17 @@ export function listAdminPosts(filters = {}) {
       return searchTarget.includes(keyword);
     })
     .sort((left, right) => {
+      if ((left.isPinned === true) !== (right.isPinned === true)) {
+        return Number(right.isPinned === true) - Number(left.isPinned === true);
+      }
+
+      const leftSortOrder = Number.parseInt(String(left.sortOrder ?? 0), 10) || 0;
+      const rightSortOrder = Number.parseInt(String(right.sortOrder ?? 0), 10) || 0;
+
+      if (leftSortOrder !== rightSortOrder) {
+        return rightSortOrder - leftSortOrder;
+      }
+
       const leftDate = new Date(left.updatedAt ?? left.publishedAt ?? 0);
       const rightDate = new Date(right.updatedAt ?? right.publishedAt ?? 0);
       return rightDate - leftDate;
@@ -542,6 +583,8 @@ export function createAdminPost(input) {
   const coverImage = normalizeCoverImage(input.coverImage);
   const seoTitle = normalizeSeoTitle(input.seoTitle, title);
   const seoDescription = normalizeSeoDescription(input.seoDescription, excerpt);
+  const sortOrder = normalizeSortOrder(input.sortOrder);
+  const isPinned = normalizePinned(input.isPinned);
   const tags = parseTags(input.tags);
   const content = parseContent(input.content);
   const status = normalizeStatus(input.status);
@@ -588,6 +631,12 @@ export function createAdminPost(input) {
     };
   }
 
+  if (sortOrder.error) {
+    return {
+      error: sortOrder.error
+    };
+  }
+
   if (coverImage.error) {
     return {
       error: coverImage.error
@@ -617,6 +666,8 @@ export function createAdminPost(input) {
     id: nextId,
     slug,
     title,
+    isPinned,
+    sortOrder: sortOrder.value,
     seoTitle: seoTitle.value,
     seoDescription: seoDescription.value,
     excerpt,
@@ -652,6 +703,8 @@ export function updateAdminPost(slug, input) {
   const coverImage = normalizeCoverImage(input.coverImage);
   const seoTitle = normalizeSeoTitle(input.seoTitle, title);
   const seoDescription = normalizeSeoDescription(input.seoDescription, excerpt);
+  const sortOrder = normalizeSortOrder(input.sortOrder);
+  const isPinned = normalizePinned(input.isPinned);
   const tags = parseTags(input.tags);
   const content = parseContent(input.content);
   const status = normalizeStatus(input.status);
@@ -698,6 +751,12 @@ export function updateAdminPost(slug, input) {
     };
   }
 
+  if (sortOrder.error) {
+    return {
+      error: sortOrder.error
+    };
+  }
+
   if (coverImage.error) {
     return {
       error: coverImage.error
@@ -723,6 +782,8 @@ export function updateAdminPost(slug, input) {
   const today = new Date().toISOString().slice(0, 10);
   const previousSlug = post.slug;
   post.title = title;
+  post.isPinned = isPinned;
+  post.sortOrder = sortOrder.value;
   post.seoTitle = seoTitle.value;
   post.seoDescription = seoDescription.value;
   post.slug = nextSlug;
