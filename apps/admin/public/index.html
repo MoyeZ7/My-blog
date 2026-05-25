@@ -252,6 +252,27 @@
                 </select>
               </label>
 
+              <label class="field">
+                <span>排序值</span>
+                <input
+                  id="create-sort-order-input"
+                  name="sortOrder"
+                  type="number"
+                  min="0"
+                  max="999"
+                  value="0"
+                  placeholder="默认 0，值越大越靠前"
+                />
+              </label>
+
+              <label class="field field-wide checkbox-field">
+                <span>推荐位</span>
+                <label class="toggle-row">
+                  <input id="create-is-pinned-input" name="isPinned" type="checkbox" />
+                  <span>置顶这篇文章，让它优先出现在前台列表</span>
+                </label>
+              </label>
+
               <label class="field field-wide">
                 <span>摘要</span>
                 <textarea
@@ -499,6 +520,7 @@
       <article class="post-row">
         <div class="post-row-main">
           <strong data-role="title"></strong>
+          <div data-role="display-flags" class="post-row-flags"></div>
           <span data-role="slug" class="post-row-slug"></span>
           <p data-role="excerpt" class="muted-text"></p>
         </div>
