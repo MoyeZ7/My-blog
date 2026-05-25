@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { comments } from "../../../packages/content/src/comments.js";
 import { resetContentStore } from "../../../packages/content/src/content-store.js";
+import { posts } from "../../../packages/content/src/posts.js";
 import {
   createPublicComment,
   getPublicSiteConfig,
@@ -20,12 +21,19 @@ test.afterEach(() => {
 });
 
 test("listPosts returns seeded posts in descending published order", () => {
+  posts[1].isPinned = true;
+  posts[1].sortOrder = 10;
   const items = listPosts();
 
   assert.equal(items.length, 4);
-  assert.equal(items[0].slug, "designing-a-blog-from-first-principles");
-  assert.equal(items[1].slug, "editorial-layouts-that-do-not-feel-generic");
+  assert.equal(items[0].slug, "editorial-layouts-that-do-not-feel-generic");
+  assert.equal(items[0].isPinned, true);
+  assert.equal(items[0].sortOrder, 10);
+  assert.equal(items[1].slug, "designing-a-blog-from-first-principles");
   assert.equal(items[0].readingTimeMinutes, 1);
+
+  delete posts[1].isPinned;
+  delete posts[1].sortOrder;
 });
 
 test("listPosts can filter by category", () => {
@@ -36,13 +44,20 @@ test("listPosts can filter by category", () => {
 });
 
 test("getPostBySlug returns related posts from the same category", () => {
+  posts[1].isPinned = true;
+  posts[1].sortOrder = 8;
   const item = getPostBySlug("editorial-layouts-that-do-not-feel-generic");
 
   assert.equal(item?.slug, "editorial-layouts-that-do-not-feel-generic");
+  assert.equal(item?.isPinned, true);
+  assert.equal(item?.sortOrder, 8);
   assert.equal(item?.seoTitle, "如何做出不普通的中文博客首页");
   assert.equal(item?.seoDescription, "博客首页不能只是卡片堆叠，真正有辨识度的页面要靠节奏、留白、层级和信息密度的控制。");
   assert.equal(item?.relatedPosts.length, 1);
   assert.equal(item?.relatedPosts[0].slug, "building-better-reading-rhythm");
+
+  delete posts[1].isPinned;
+  delete posts[1].sortOrder;
 });
 
 test("listCategories returns counts", () => {

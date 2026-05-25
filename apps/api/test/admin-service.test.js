@@ -64,13 +64,21 @@ test("getAdminDashboardSummary exposes admin-facing content overview", () => {
 });
 
 test("listAdminPosts returns admin rows and can filter by keyword and category", () => {
+  posts[1].isPinned = true;
+  posts[1].sortOrder = 5;
   const filteredByCategory = listAdminPosts({ category: "设计" });
   const filteredByKeyword = listAdminPosts({ q: "范围控制" });
 
   assert.equal(filteredByCategory.total, 2);
+  assert.equal(filteredByCategory.items[0].slug, "editorial-layouts-that-do-not-feel-generic");
+  assert.equal(filteredByCategory.items[0].isPinned, true);
+  assert.equal(filteredByCategory.items[0].sortOrder, 5);
   assert.equal(filteredByCategory.items[0].status, "已发布");
   assert.equal(filteredByKeyword.total, 1);
   assert.equal(filteredByKeyword.items[0].slug, "what-to-build-before-an-admin-panel");
+
+  delete posts[1].isPinned;
+  delete posts[1].sortOrder;
 });
 
 test("createAdminPost validates fields and stores draft or published posts", () => {
@@ -263,6 +271,8 @@ test("getAdminPostBySlug returns editable post detail and updateAdminPost can ch
 
   const updateResult = updateAdminPost(createResult.post.slug, {
     title: "后台编辑流程测试文章已更新",
+    isPinned: true,
+    sortOrder: 12,
     excerpt: "更新后的摘要。",
     category: "编辑",
     tags: "编辑, 发布",
@@ -272,7 +282,40 @@ test("getAdminPostBySlug returns editable post detail and updateAdminPost can ch
 
   assert.ok(updateResult.post);
   assert.equal(updateResult.post?.status, "已发布");
+  assert.equal(posts[0].isPinned, true);
+  assert.equal(posts[0].sortOrder, 12);
   assert.equal(listPosts({ category: "编辑" }).length, 1);
+
+  posts.splice(0, 1);
+});
+
+test("createAdminPost validates and stores pinning and sort order", () => {
+  const invalidResult = createAdminPost({
+    title: "排序字段校验文章",
+    excerpt: "用于验证排序字段。",
+    category: "测试",
+    tags: "排序, 置顶",
+    content: "正文内容",
+    sortOrder: "1000",
+    status: "draft"
+  });
+
+  assert.equal(invalidResult.error, "排序值必须是 0 到 999 之间的整数");
+
+  const createResult = createAdminPost({
+    title: "置顶排序文章",
+    excerpt: "用于验证置顶和排序保存。",
+    category: "测试",
+    tags: "排序, 置顶",
+    content: "正文内容",
+    isPinned: true,
+    sortOrder: "9",
+    status: "published"
+  });
+
+  assert.equal(createResult.post?.isPinned, true);
+  assert.equal(createResult.post?.sortOrder, 9);
+  assert.equal(listPosts()[0].slug, createResult.post?.slug);
 
   posts.splice(0, 1);
 });
