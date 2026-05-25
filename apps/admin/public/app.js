@@ -332,6 +332,8 @@ function resetCreatePostForm() {
   document.querySelector("#create-post-form").reset();
   document.querySelector("#cover-upload-input").value = "";
   document.querySelector("#create-status-select").value = "published";
+  document.querySelector("#create-sort-order-input").value = "0";
+  document.querySelector("#create-is-pinned-input").checked = false;
   adminState.editingSlug = null;
   adminState.slugTouched = false;
   setEditorMode(false);
@@ -357,6 +359,7 @@ function renderAdminPosts(items, total) {
   root.replaceChildren(
     ...items.map((item) => {
       const fragment = template.content.cloneNode(true);
+      const flagsRoot = fragment.querySelector('[data-role="display-flags"]');
       fragment.querySelector('[data-role="title"]').textContent = item.title;
       fragment.querySelector('[data-role="slug"]').textContent = item.slug;
       fragment.querySelector('[data-role="excerpt"]').textContent = item.excerpt;
@@ -364,6 +367,21 @@ function renderAdminPosts(items, total) {
       fragment.querySelector('[data-role="status"]').textContent = item.status;
       fragment.querySelector('[data-role="date"]').textContent = item.updatedAt;
       fragment.querySelector('[data-role="edit"]').dataset.slug = item.slug;
+
+      const flags = [];
+
+      if (item.isPinned) {
+        const badge = document.createElement("span");
+        badge.className = "post-flag is-pinned";
+        badge.textContent = "置顶";
+        flags.push(badge);
+      }
+
+      const sortBadge = document.createElement("span");
+      sortBadge.className = "post-flag";
+      sortBadge.textContent = `排序 ${item.sortOrder ?? 0}`;
+      flags.push(sortBadge);
+      flagsRoot.replaceChildren(...flags);
       return fragment;
     })
   );
@@ -575,6 +593,8 @@ async function loadAdminPostDetail(slug) {
   document.querySelector("#create-slug-input").value = data.post.slug;
   document.querySelector("#create-category-input").value = data.post.category;
   document.querySelector("#create-status-select").value = data.post.status;
+  document.querySelector("#create-sort-order-input").value = String(data.post.sortOrder ?? 0);
+  document.querySelector("#create-is-pinned-input").checked = data.post.isPinned === true;
   document.querySelector("#create-excerpt-input").value = data.post.excerpt;
   document.querySelector("#create-seo-title-input").value = data.post.seoTitle ?? "";
   document.querySelector("#create-seo-description-input").value = data.post.seoDescription ?? "";
@@ -858,6 +878,8 @@ function bindCreatePostForm() {
       seoDescription: document.querySelector("#create-seo-description-input").value.trim(),
       category: document.querySelector("#create-category-input").value.trim(),
       status: document.querySelector("#create-status-select").value,
+      sortOrder: document.querySelector("#create-sort-order-input").value.trim(),
+      isPinned: document.querySelector("#create-is-pinned-input").checked,
       excerpt: document.querySelector("#create-excerpt-input").value.trim(),
       tags: document.querySelector("#create-tags-input").value.trim(),
       coverImage: document.querySelector("#create-cover-input").value.trim(),
