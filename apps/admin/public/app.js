@@ -258,16 +258,29 @@ function renderSeoPreview() {
   const title = document.querySelector("#create-title-input").value.trim();
   const slug = document.querySelector("#create-slug-input").value.trim();
   const excerpt = document.querySelector("#create-excerpt-input").value.trim();
+  const canonicalUrlInput = document.querySelector("#create-canonical-url-input").value.trim();
+  const ogImageInput = document.querySelector("#create-og-image-input").value.trim();
+  const metaKeywordsInput = document.querySelector("#create-meta-keywords-input").value.trim();
   const seoTitleInput = document.querySelector("#create-seo-title-input").value.trim();
   const seoDescriptionInput = document.querySelector("#create-seo-description-input").value.trim();
   const previewTitle = document.querySelector("#seo-preview-title");
   const previewUrl = document.querySelector("#seo-preview-url");
   const previewDescription = document.querySelector("#seo-preview-description");
+  const previewKeywords = document.querySelector("#seo-preview-keywords");
+  const previewOgImage = document.querySelector("#seo-preview-og-image");
+  const fallbackUrl = slug ? buildPublicPostUrl(slug) : "生成 slug 后会显示公开链接";
+  const fallbackOgImage = getEffectiveCoverImage();
 
   previewTitle.textContent = seoTitleInput || title || "搜索结果标题会显示在这里";
-  previewUrl.textContent = slug ? buildPublicPostUrl(slug) : "生成 slug 后会显示公开链接";
+  previewUrl.textContent = canonicalUrlInput || fallbackUrl;
   previewDescription.textContent =
     seoDescriptionInput || excerpt || "摘要会显示在这里，帮助你预览搜索结果里的描述文案。";
+  previewKeywords.textContent = metaKeywordsInput
+    ? `关键词：${metaKeywordsInput}`
+    : "关键词：默认沿用文章标签";
+  previewOgImage.textContent = ogImageInput
+    ? `OG 图片：${ogImageInput}`
+    : `OG 图片：默认沿用当前文章封面${fallbackOgImage ? ` (${fallbackOgImage})` : ""}`;
 }
 
 function createCoverOptionCard(item) {
@@ -598,6 +611,9 @@ async function loadAdminPostDetail(slug) {
   document.querySelector("#create-excerpt-input").value = data.post.excerpt;
   document.querySelector("#create-seo-title-input").value = data.post.seoTitle ?? "";
   document.querySelector("#create-seo-description-input").value = data.post.seoDescription ?? "";
+  document.querySelector("#create-canonical-url-input").value = data.post.canonicalUrl ?? "";
+  document.querySelector("#create-og-image-input").value = data.post.ogImage ?? "";
+  document.querySelector("#create-meta-keywords-input").value = data.post.metaKeywords ?? "";
   document.querySelector("#create-tags-input").value = data.post.tags;
   document.querySelector("#create-cover-input").value = data.post.coverImage;
   document.querySelector("#create-content-input").value = data.post.content;
@@ -876,6 +892,9 @@ function bindCreatePostForm() {
       slug: document.querySelector("#create-slug-input").value.trim(),
       seoTitle: document.querySelector("#create-seo-title-input").value.trim(),
       seoDescription: document.querySelector("#create-seo-description-input").value.trim(),
+      canonicalUrl: document.querySelector("#create-canonical-url-input").value.trim(),
+      ogImage: document.querySelector("#create-og-image-input").value.trim(),
+      metaKeywords: document.querySelector("#create-meta-keywords-input").value.trim(),
       category: document.querySelector("#create-category-input").value.trim(),
       status: document.querySelector("#create-status-select").value,
       sortOrder: document.querySelector("#create-sort-order-input").value.trim(),
@@ -966,16 +985,30 @@ function bindSeoPreview() {
   document.querySelector("#create-seo-description-input").addEventListener("input", () => {
     renderSeoPreview();
   });
+
+  document.querySelector("#create-canonical-url-input").addEventListener("input", () => {
+    renderSeoPreview();
+  });
+
+  document.querySelector("#create-og-image-input").addEventListener("input", () => {
+    renderSeoPreview();
+  });
+
+  document.querySelector("#create-meta-keywords-input").addEventListener("input", () => {
+    renderSeoPreview();
+  });
 }
 
 function bindCoverPreview() {
   document.querySelector("#create-cover-input").addEventListener("input", () => {
     renderCoverPreview();
+    renderSeoPreview();
   });
 
   document.querySelector("#apply-default-cover-button").addEventListener("click", () => {
     document.querySelector("#create-cover-input").value = "";
     renderCoverPreview();
+    renderSeoPreview();
   });
 
   document.querySelector("#open-cover-link-button").addEventListener("click", () => {
@@ -1005,6 +1038,7 @@ function bindCoverActions() {
 
     document.querySelector("#create-cover-input").value = url;
     renderAdminCoverOptions(coverLibraryState.items, coverLibraryState.items.length);
+    renderSeoPreview();
     setCreatePostMessage("封面已填入表单，可以继续编辑并保存。");
   });
 }
@@ -1049,6 +1083,7 @@ function bindCoverUploadForm() {
 
       document.querySelector("#create-cover-input").value = result.asset.url;
       input.value = "";
+      renderSeoPreview();
       setCoverUploadMessage(`图片已上传：${result.asset.fileName}`);
       setCreatePostMessage("封面已上传并填入表单，可以继续保存文章。");
       await loadAdminCovers();
