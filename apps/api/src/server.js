@@ -5,6 +5,7 @@ import {
   deleteAdminCategory,
   deleteAdminPost,
   deleteAdminTag,
+  getAdminAuthConfig,
   getAdminSiteConfig,
   listAdminCoverOptions,
   listAdminCategories,
@@ -173,6 +174,11 @@ function handleGetRequest(pathname, searchParams, response) {
 
   if (pathname === "/api/site-config") {
     sendJson(response, 200, getPublicSiteConfig());
+    return;
+  }
+
+  if (pathname === "/api/admin/auth-config") {
+    sendJson(response, 200, getAdminAuthConfig());
     return;
   }
 

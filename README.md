@@ -60,12 +60,19 @@ My-blog-master
 ```bash
 npm run start:api
 npm run start:web
+npm run start:admin
 ```
 
 启动后访问：
 
 - 前台页面：`http://localhost:3000`
 - API 服务：`http://localhost:3001`
+- 后台登录：`http://localhost:3002`
+
+后台登录说明：
+
+- 未设置 `ADMIN_PASSWORD` 时，后台进入演示模式，默认账号为 `admin`，密码可留空
+- 设置 `ADMIN_PASSWORD` 后，后台自动切换为密码模式，需输入账号和密码
 
 常用开发命令：
 
@@ -79,10 +86,10 @@ npm run dev:web
 
 下一阶段会继续补齐后台管理方向的能力，包括：
 
-- 管理端登录页
-- 管理后台壳子
-- 文章新增与编辑流程
-- 后续接入数据库持久化
+- 登录鉴权进一步持久化
+- 文章工作流与状态细分
+- 媒体资源和封面管理增强
+- 数据库结构继续完善
 
 ## 说明
 

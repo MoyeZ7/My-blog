@@ -10,6 +10,7 @@ import {
   deleteAdminCategory,
   deleteAdminPost,
   deleteAdminTag,
+  getAdminAuthConfig,
   getDefaultCoverImage,
   getAdminPostBySlug,
   getAdminDashboardSummary,
@@ -43,6 +44,15 @@ test("loginAdmin creates a reusable session for valid credentials", () => {
   assert.ok(session);
   assert.equal(session?.username, "admin");
   assert.equal(getAdminSession(session?.token)?.displayName, "站点管理员");
+});
+
+test("getAdminAuthConfig exposes current admin auth mode", () => {
+  const config = getAdminAuthConfig();
+
+  assert.equal(config.username, "admin");
+  assert.equal(config.displayName, "站点管理员");
+  assert.equal(config.mode, testAdminPassword ? "password" : "demo");
+  assert.equal(config.passwordRequired, Boolean(testAdminPassword));
 });
 
 test("loginAdmin rejects invalid credentials", () => {

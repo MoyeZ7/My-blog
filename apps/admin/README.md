@@ -46,6 +46,7 @@ http://localhost:3002
 
 ## 当前依赖的接口
 
+- `GET /api/admin/auth-config`
 - `POST /api/admin/login`
 - `GET /api/admin/summary`
 - `GET /api/admin/posts`
@@ -72,6 +73,11 @@ http://localhost:3002
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=请自行设置一个强密码
 ```
+
+说明：
+
+- 未配置 `ADMIN_PASSWORD` 时，后台为演示模式，只需输入账号即可登录
+- 配置 `ADMIN_PASSWORD` 后，后台为密码模式，登录页会自动提示需要输入密码
 
 后续会继续补充：
 

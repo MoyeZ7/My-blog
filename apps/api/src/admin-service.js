@@ -464,6 +464,17 @@ export function getAdminSession(token) {
   return sessions.get(token) ?? null;
 }
 
+export function getAdminAuthConfig() {
+  const mode = adminCredentials.password ? "password" : "demo";
+
+  return {
+    mode,
+    username: adminCredentials.username,
+    displayName: adminCredentials.displayName,
+    passwordRequired: mode === "password"
+  };
+}
+
 export function isAdminCredentialsConfigured() {
   return Boolean(adminCredentials.password);
 }

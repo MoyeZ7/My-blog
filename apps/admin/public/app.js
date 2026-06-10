@@ -2,6 +2,7 @@ const apiOrigin = window.localStorage.getItem("my-blog-api-origin") ?? "http://l
 const webOrigin = window.localStorage.getItem("my-blog-web-origin") ?? "http://localhost:3000";
 const tokenKey = "my-blog-admin-token";
 const adminState = {
+  authMode: "unknown",
   coverQuery: "",
   q: "",
   category: "",
@@ -16,6 +17,44 @@ const coverLibraryState = {
   defaultCoverImage: "",
   items: []
 };
+
+function setLoginModeUi(config = {}) {
+  const note = document.querySelector("#login-mode-note");
+  const usernameInput = document.querySelector("#username-input");
+  const passwordInput = document.querySelector("#password-input");
+  const passwordLabel = document.querySelector("#password-label");
+  const isPasswordMode = config.mode === "password";
+
+  adminState.authMode = config.mode ?? "unknown";
+
+  if (isPasswordMode) {
+    note.textContent = `当前为密码模式，请使用后台账号“${config.username ?? "admin"}”和密码登录。`;
+    passwordInput.placeholder = "请输入后台密码";
+    passwordInput.required = true;
+    passwordLabel.textContent = "密码";
+
+    if (!usernameInput.value.trim() && config.username) {
+      usernameInput.value = config.username;
+    }
+
+    return;
+  }
+
+  if (config.mode === "demo") {
+    note.textContent = `当前为演示模式，输入账号“${config.username ?? "admin"}”即可直接进入管理台。`;
+    passwordInput.placeholder = "演示模式下可留空";
+    passwordInput.required = false;
+    passwordInput.value = "";
+    passwordLabel.textContent = "密码（可留空）";
+    usernameInput.value = config.username ?? "admin";
+    return;
+  }
+
+  note.textContent = "暂时无法识别后台登录模式，请确认 API 已启动。";
+  passwordInput.placeholder = "请输入后台密码";
+  passwordInput.required = false;
+  passwordLabel.textContent = "密码";
+}
 
 function getStoredToken() {
   return window.localStorage.getItem(tokenKey);
@@ -140,6 +179,16 @@ function showDashboard() {
 function showLogin() {
   document.querySelector("#dashboard-view").classList.add("is-hidden");
   document.querySelector("#login-view").classList.remove("is-hidden");
+}
+
+async function loadAdminAuthConfig() {
+  try {
+    const config = await fetchJson("/api/admin/auth-config");
+    setLoginModeUi(config);
+  } catch (error) {
+    setLoginModeUi();
+    setMessage("无法获取后台登录模式，请确认 API 服务可用。", true);
+  }
 }
 
 function renderStats(summary) {
@@ -729,6 +778,11 @@ function bindLoginForm() {
 
     if (!username) {
       setMessage("请输入后台账号。", true);
+      return;
+    }
+
+    if (adminState.authMode === "password" && !password) {
+      setMessage("当前为密码模式，请输入后台密码。", true);
       return;
     }
 
@@ -1428,6 +1482,7 @@ bindCategoryActions();
 setEditorMode(false);
 renderSlugPreview();
 renderSeoPreview();
+loadAdminAuthConfig();
 
 loadDashboard().then(async () => {
   await loadAdminPosts();
