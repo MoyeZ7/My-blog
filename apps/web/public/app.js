@@ -28,18 +28,35 @@ async function fetchJson(path) {
 }
 
 function renderSiteConfig(config) {
+  const headerNote = document.querySelector("#site-header-note");
+  const panelEyebrow = document.querySelector("#panel-eyebrow");
+  const panelTitle = document.querySelector("#panel-title");
+  const panelDescription = document.querySelector("#panel-description");
+  const featureCard = document.querySelector("#feature-card");
+  const featureEyebrow = document.querySelector("#feature-eyebrow");
+  const featureTitle = document.querySelector("#feature-title");
+  const featureDescription = document.querySelector("#feature-description");
+  const hasPanelCopy = Boolean(config.panelEyebrow || config.panelTitle || config.panelDescription);
+  const hasFeatureCopy = Boolean(config.featureEyebrow || config.featureTitle || config.featureDescription);
+
   document.title = config.brandName;
   document.querySelector("#site-brand").textContent = config.brandName;
-  document.querySelector("#site-header-note").textContent = config.headerNote;
+  headerNote.textContent = config.headerNote;
+  headerNote.classList.toggle("is-hidden", !config.headerNote);
   document.querySelector("#hero-eyebrow").textContent = config.heroEyebrow;
   document.querySelector("#hero-title").textContent = config.heroTitle;
   document.querySelector("#hero-description").textContent = config.heroDescription;
-  document.querySelector("#panel-eyebrow").textContent = config.panelEyebrow;
-  document.querySelector("#panel-title").textContent = config.panelTitle;
-  document.querySelector("#panel-description").textContent = config.panelDescription;
-  document.querySelector("#feature-eyebrow").textContent = config.featureEyebrow;
-  document.querySelector("#feature-title").textContent = config.featureTitle;
-  document.querySelector("#feature-description").textContent = config.featureDescription;
+  panelEyebrow.textContent = config.panelEyebrow;
+  panelTitle.textContent = config.panelTitle;
+  panelDescription.textContent = config.panelDescription;
+  panelEyebrow.classList.toggle("is-hidden", !config.panelEyebrow);
+  panelTitle.classList.toggle("is-hidden", !config.panelTitle);
+  panelDescription.classList.toggle("is-hidden", !config.panelDescription);
+  document.querySelector("#hero-panel-copy").classList.toggle("is-hidden", !hasPanelCopy);
+  featureEyebrow.textContent = config.featureEyebrow;
+  featureTitle.textContent = config.featureTitle;
+  featureDescription.textContent = config.featureDescription;
+  featureCard.classList.toggle("is-hidden", !hasFeatureCopy);
 }
 
 function createFilterChip(label, onClick, variant = "") {

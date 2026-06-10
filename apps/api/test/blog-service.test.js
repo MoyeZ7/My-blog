@@ -197,5 +197,6 @@ test("getPublicSiteConfig exposes homepage and brand copy", () => {
 
   assert.equal(config.brandName, "我的博客");
   assert.ok(config.heroTitle.length > 0);
-  assert.ok(config.featureDescription.length > 0);
+  assert.equal(typeof config.featureDescription, "string");
+  assert.equal(typeof config.headerNote, "string");
 });
