@@ -47,7 +47,9 @@ http://localhost:3002
 ## 当前依赖的接口
 
 - `GET /api/admin/auth-config`
+- `GET /api/admin/session`
 - `POST /api/admin/login`
+- `DELETE /api/admin/session`
 - `GET /api/admin/summary`
 - `GET /api/admin/posts`
 - `GET /api/admin/covers`
@@ -72,12 +74,14 @@ http://localhost:3002
 ```text
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=请自行设置一个强密码
+ADMIN_SESSION_TTL_MS=43200000
 ```
 
 说明：
 
 - 未配置 `ADMIN_PASSWORD` 时，后台为演示模式，只需输入账号即可登录
 - 配置 `ADMIN_PASSWORD` 后，后台为密码模式，登录页会自动提示需要输入密码
+- 会话默认有效期为 12 小时，可通过 `ADMIN_SESSION_TTL_MS` 调整
 
 后续会继续补充：
 

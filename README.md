@@ -73,6 +73,7 @@ npm run start:admin
 
 - 未设置 `ADMIN_PASSWORD` 时，后台进入演示模式，默认账号为 `admin`，密码可留空
 - 设置 `ADMIN_PASSWORD` 后，后台自动切换为密码模式，需输入账号和密码
+- 后台会话默认保留 12 小时，过期后会自动返回登录页
 
 常用开发命令：
 

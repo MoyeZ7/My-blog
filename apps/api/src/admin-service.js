@@ -11,6 +11,7 @@ import { listPosts } from "./blog-service.js";
 import { listUploadedImages } from "./upload-service.js";
 
 const sessions = new Map();
+const sessionTtlMs = Number.parseInt(process.env.ADMIN_SESSION_TTL_MS ?? `${12 * 60 * 60 * 1000}`, 10);
 const adminCredentials = {
   username: process.env.ADMIN_USERNAME ?? "admin",
   password: process.env.ADMIN_PASSWORD ?? "",
@@ -71,6 +72,21 @@ const curatedCoverLibrary = [
 
 function normalize(value) {
   return value?.trim() ?? "";
+}
+
+function createAdminSession(displayName) {
+  const token = randomUUID();
+  const createdAt = new Date();
+  const session = {
+    token,
+    username: adminCredentials.username,
+    displayName,
+    createdAt: createdAt.toISOString(),
+    expiresAt: new Date(createdAt.getTime() + sessionTtlMs).toISOString()
+  };
+
+  sessions.set(token, session);
+  return session;
 }
 
 function normalizeStatus(status) {
@@ -428,32 +444,14 @@ export function loginAdmin({ username, password }) {
       return null;
     }
 
-    const token = randomUUID();
-    const session = {
-      token,
-      username: adminCredentials.username,
-      displayName: `${adminCredentials.displayName}（演示模式）`,
-      createdAt: new Date().toISOString()
-    };
-
-    sessions.set(token, session);
-    return session;
+    return createAdminSession(`${adminCredentials.displayName}（演示模式）`);
   }
 
   if (username !== adminCredentials.username || password !== adminCredentials.password) {
     return null;
   }
 
-  const token = randomUUID();
-  const session = {
-    token,
-    username: adminCredentials.username,
-    displayName: adminCredentials.displayName,
-    createdAt: new Date().toISOString()
-  };
-
-  sessions.set(token, session);
-  return session;
+  return createAdminSession(adminCredentials.displayName);
 }
 
 export function getAdminSession(token) {
@@ -461,7 +459,26 @@ export function getAdminSession(token) {
     return null;
   }
 
-  return sessions.get(token) ?? null;
+  const session = sessions.get(token) ?? null;
+
+  if (!session) {
+    return null;
+  }
+
+  if (Date.parse(session.expiresAt) <= Date.now()) {
+    sessions.delete(token);
+    return null;
+  }
+
+  return session;
+}
+
+export function revokeAdminSession(token) {
+  if (!token) {
+    return false;
+  }
+
+  return sessions.delete(token);
 }
 
 export function getAdminAuthConfig() {

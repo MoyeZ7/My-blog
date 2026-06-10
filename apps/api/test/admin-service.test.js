@@ -24,6 +24,7 @@ import {
   loginAdmin,
   renameAdminCategory,
   renameAdminTag,
+  revokeAdminSession,
   updateAdminCommentStatus,
   updateAdminPost,
   updateAdminSiteConfig
@@ -44,6 +45,7 @@ test("loginAdmin creates a reusable session for valid credentials", () => {
   assert.ok(session);
   assert.equal(session?.username, "admin");
   assert.equal(getAdminSession(session?.token)?.displayName, "站点管理员");
+  assert.equal(typeof session?.expiresAt, "string");
 });
 
 test("getAdminAuthConfig exposes current admin auth mode", () => {
@@ -62,6 +64,18 @@ test("loginAdmin rejects invalid credentials", () => {
   });
 
   assert.equal(session, null);
+});
+
+test("revokeAdminSession removes an existing admin session", () => {
+  const session = loginAdmin({
+    username: "admin",
+    password: testAdminPassword
+  });
+
+  assert.ok(session);
+  assert.equal(getAdminSession(session.token)?.username, "admin");
+  assert.equal(revokeAdminSession(session.token), true);
+  assert.equal(getAdminSession(session.token), null);
 });
 
 test("getAdminDashboardSummary exposes admin-facing content overview", () => {

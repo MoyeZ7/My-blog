@@ -18,6 +18,7 @@ import {
   loginAdmin,
   renameAdminCategory,
   renameAdminTag,
+  revokeAdminSession,
   updateAdminCommentStatus,
   updateAdminPost,
   updateAdminSiteConfig
@@ -376,6 +377,24 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && url.pathname === "/api/admin/session") {
+    const session = getAuthorizedAdminSession(request, response);
+
+    if (!session) {
+      return;
+    }
+
+    sendJson(response, 200, {
+      session: {
+        username: session.username,
+        displayName: session.displayName,
+        createdAt: session.createdAt,
+        expiresAt: session.expiresAt
+      }
+    });
+    return;
+  }
+
   if (request.method === "GET" && url.pathname === "/api/admin/posts") {
     const session = getAuthorizedAdminSession(request, response);
 
@@ -575,6 +594,24 @@ const server = http.createServer(async (request, response) => {
         displayName: session.displayName
       },
       ...result
+    });
+    return;
+  }
+
+  if (request.method === "DELETE" && url.pathname === "/api/admin/session") {
+    const token = getBearerToken(request);
+    const session = getAdminSession(token);
+
+    if (!session) {
+      sendJson(response, 401, {
+        message: "Missing admin authorization"
+      });
+      return;
+    }
+
+    revokeAdminSession(token);
+    sendJson(response, 200, {
+      message: "已退出后台登录"
     });
     return;
   }

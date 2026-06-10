@@ -73,10 +73,27 @@ async function fetchJson(path, options = {}) {
   const payload = await response.json();
 
   if (!response.ok) {
-    throw new Error(payload.message ?? `Request failed: ${response.status}`);
+    const error = new Error(payload.message ?? `Request failed: ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
 
   return payload;
+}
+
+async function fetchAdminJson(path, options = {}) {
+  try {
+    return await fetchJson(path, options);
+  } catch (error) {
+    if (error.status === 401) {
+      clearStoredToken();
+      showLogin();
+      setMessage("登录状态已失效，请重新登录。", true);
+      await loadAdminAuthConfig();
+    }
+
+    throw error;
+  }
 }
 
 function readFileAsBase64(file) {
@@ -601,13 +618,14 @@ async function loadDashboard() {
   }
 
   try {
-    const data = await fetchJson("/api/admin/summary", {
+    const data = await fetchAdminJson("/api/admin/summary", {
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
 
-    document.querySelector("#session-note").textContent = `${data.session.displayName} 已登录`;
+    document.querySelector("#session-note").textContent =
+      `${data.session.displayName} 已登录 · 会话创建于 ${data.session.createdAt.slice(0, 16).replace("T", " ")}`;
     renderStats(data.summary);
     renderRecentPosts(data.summary.recentPosts);
     renderCategories(data.summary.categories);
@@ -615,8 +633,10 @@ async function loadDashboard() {
     renderPostCategoryOptions(data.summary.categories);
     showDashboard();
   } catch (error) {
-    clearStoredToken();
-    showLogin();
+    if (error.status !== 401) {
+      showLogin();
+      setMessage("后台概览加载失败，请检查 API 服务。", true);
+    }
   }
 }
 
@@ -627,7 +647,7 @@ async function loadAdminPosts() {
     return;
   }
 
-  const data = await fetchJson(`/api/admin/posts${createPostQuery()}`, {
+  const data = await fetchAdminJson(`/api/admin/posts${createPostQuery()}`, {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -643,7 +663,7 @@ async function loadAdminPostDetail(slug) {
     return;
   }
 
-  const data = await fetchJson(`/api/admin/posts/${encodeURIComponent(slug)}`, {
+  const data = await fetchAdminJson(`/api/admin/posts/${encodeURIComponent(slug)}`, {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -684,7 +704,7 @@ async function loadAdminComments() {
     return;
   }
 
-  const data = await fetchJson(`/api/admin/comments${createCommentQuery()}`, {
+  const data = await fetchAdminJson(`/api/admin/comments${createCommentQuery()}`, {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -700,7 +720,7 @@ async function loadAdminSiteConfig() {
     return;
   }
 
-  const data = await fetchJson("/api/admin/site-config", {
+  const data = await fetchAdminJson("/api/admin/site-config", {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -727,7 +747,7 @@ async function loadAdminTags() {
     return;
   }
 
-  const data = await fetchJson(`/api/admin/tags${createTagQuery()}`, {
+  const data = await fetchAdminJson(`/api/admin/tags${createTagQuery()}`, {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -743,7 +763,7 @@ async function loadAdminCategoriesList() {
     return;
   }
 
-  const data = await fetchJson(`/api/admin/categories${createCategoryAdminQuery()}`, {
+  const data = await fetchAdminJson(`/api/admin/categories${createCategoryAdminQuery()}`, {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -759,7 +779,7 @@ async function loadAdminCovers() {
     return;
   }
 
-  const data = await fetchJson(`/api/admin/covers${createCoverQuery()}`, {
+  const data = await fetchAdminJson(`/api/admin/covers${createCoverQuery()}`, {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -811,11 +831,52 @@ function bindLoginForm() {
 }
 
 function bindLogout() {
-  document.querySelector("#logout-button").addEventListener("click", () => {
-    clearStoredToken();
-    setMessage("");
-    showLogin();
+  document.querySelector("#logout-button").addEventListener("click", async () => {
+    const token = getStoredToken();
+
+    try {
+      if (token) {
+        await fetchAdminJson("/api/admin/session", {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      }
+    } catch (error) {
+      if (error.status !== 401) {
+        setMessage("后台退出请求失败，已清理本地登录状态。", true);
+      }
+    } finally {
+      clearStoredToken();
+      setMessage("");
+      showLogin();
+      await loadAdminAuthConfig();
+    }
   });
+}
+
+async function restoreAdminSession() {
+  const token = getStoredToken();
+
+  if (!token) {
+    showLogin();
+    return false;
+  }
+
+  try {
+    const data = await fetchAdminJson("/api/admin/session", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    document.querySelector("#session-note").textContent =
+      `${data.session.displayName} 已恢复登录 · 会话有效至 ${data.session.expiresAt.slice(0, 16).replace("T", " ")}`;
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
 
 function bindPostFilters() {
@@ -1484,7 +1545,12 @@ renderSlugPreview();
 renderSeoPreview();
 loadAdminAuthConfig();
 
-loadDashboard().then(async () => {
+restoreAdminSession().then(async (hasSession) => {
+  if (!hasSession) {
+    return;
+  }
+
+  await loadDashboard();
   await loadAdminPosts();
   await loadAdminComments();
   await loadAdminSiteConfig();
