@@ -727,8 +727,8 @@ function bindLoginForm() {
     const username = document.querySelector("#username-input").value.trim();
     const password = document.querySelector("#password-input").value;
 
-    if (!username || !password) {
-      setMessage("请输入后台账号和密码。", true);
+    if (!username) {
+      setMessage("请输入后台账号。", true);
       return;
     }
 

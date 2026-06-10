@@ -11,7 +11,6 @@ import {
   listAdminComments,
   getAdminPostBySlug,
   getAdminDashboardSummary,
-  isAdminCredentialsConfigured,
   getAdminSession,
   listAdminPosts,
   listAdminTags,
@@ -233,13 +232,6 @@ async function handlePostRequest(pathname, request, response) {
   }
 
   if (pathname === "/api/admin/login") {
-    if (!isAdminCredentialsConfigured()) {
-      sendJson(response, 503, {
-        message: "Admin credentials are not configured"
-      });
-      return;
-    }
-
     let credentials;
 
     try {

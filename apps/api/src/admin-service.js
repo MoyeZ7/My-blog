@@ -424,7 +424,20 @@ function getAdminStats() {
 
 export function loginAdmin({ username, password }) {
   if (!adminCredentials.password) {
-    return null;
+    if (username !== adminCredentials.username) {
+      return null;
+    }
+
+    const token = randomUUID();
+    const session = {
+      token,
+      username: adminCredentials.username,
+      displayName: `${adminCredentials.displayName}（演示模式）`,
+      createdAt: new Date().toISOString()
+    };
+
+    sessions.set(token, session);
+    return session;
   }
 
   if (username !== adminCredentials.username || password !== adminCredentials.password) {
